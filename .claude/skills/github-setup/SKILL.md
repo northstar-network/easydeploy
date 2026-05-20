@@ -72,11 +72,11 @@ AskUserQuestion:
   options:
     - label: "<suggestedName>"
       description: "Suggested from the project folder name (Recommended)"
-    - label: "I'll type a custom name"
-      description: "Enter a custom repository name"
+    - label: "Type a custom name"
+      description: "Enter a custom repository name manually"
 ```
 
-If the user picks "I'll type a custom name" → ask for free text input (Other).
+If the user picks "Type a custom name" → ask for free text input.
 
 **Validate the name**: must match `^[a-zA-Z0-9][a-zA-Z0-9._-]{0,99}$` and must not be empty.
 If invalid → explain the constraint and ask again.
@@ -100,11 +100,14 @@ AskUserQuestion:
   question: "What is your GitHub username?"
   header: "GitHub username"
   options:
-    - label: "<detectedUsername>"       ← only show if detectedUsername is non-empty
+    - label: "<detectedUsername>"
       description: "Detected from your git configuration (Recommended)"
+    - label: "Type my username"
+      description: "Enter your GitHub username manually"
 ```
 
-If `detectedUsername` is empty, or if the user picks "Other" → ask for free text input directly.
+If `detectedUsername` is empty → skip option 1 and ask for free text input directly.
+If the user picks "Type my username" → ask for free text input.
 
 Store as `githubUsername`.
 

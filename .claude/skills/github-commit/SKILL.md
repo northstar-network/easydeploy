@@ -42,10 +42,15 @@ Run:
 git diff --name-only --diff-filter=U
 ```
 
-Store the list as `conflictedFiles`. Display:
+Store the list as `conflictedFiles`.
+
+Display a simple, reassuring message — no technical jargon:
 
 ```
-Found <n> file(s) with conflicts:
+Deux personnes ont modifié les mêmes fichiers en même temps.
+Pas de panique, on va régler ça ensemble, fichier par fichier.
+
+Fichiers concernés (<n>) :
 <list of files>
 ```
 
@@ -65,37 +70,46 @@ Identify every conflict block delimited by:
 >>>>>>> <commit or branch>
 ```
 
-For each conflict block, analyse both sides and build 1 to 3 proposals depending on complexity:
+For each conflict block:
+
+**Explain the situation in plain language**, as if talking to someone who has never used git. Do not use technical terms like "HEAD", "merge", "branch", "commit", "remote", or "diff". Instead, describe concretely what each version contains and why there is a disagreement. Example:
+
+> Dans le fichier `config.js`, deux modifications différentes ont été faites sur la même ligne.
+> - **Votre version** : le port est réglé sur 3000
+> - **La version reçue** : le port est réglé sur 8080
+> Laquelle voulez-vous garder ?
+
+Build 1 to 3 proposals depending on complexity:
 
 | Proposal | When to suggest |
 |---|---|
-| **Keep local** | Remote version seems older, redundant, or conflicts with local intent |
-| **Keep remote** | Local version is less complete or has been superseded |
-| **Intelligent merge** | Both sides bring something — produce a merged version that preserves both contributions |
+| **Garder ma version** | The local version is more relevant or more recent |
+| **Garder la version reçue** | The incoming version is more complete or supersedes the local one |
+| **Combiner les deux** | Both versions bring something useful — propose a merged result that keeps both contributions |
 
-Explain each proposal in plain language (what it keeps, what it removes).
+Describe each option in a single plain sentence focused on the content, not the git mechanics.
 
 Ask:
 
 ```
 AskUserQuestion:
-  question: "Conflict in <filename> — block <n>/<total>. Which resolution do you prefer?"
-  header: "Conflict"
+  question: "Fichier <filename> — désaccord <n>/<total>. Quelle version voulez-vous garder ?"
+  header: "Désaccord"
   options:
-    - label: "Keep local"
-      description: "<short summary of the local version>"
-    - label: "Keep remote"
-      description: "<short summary of the remote version>"
-    - label: "Intelligent merge"      ← only if applicable
-      description: "<short summary of the proposed merge>"
-    - label: "Show me the full diff"
-      description: "Display both versions in full before deciding"
+    - label: "Garder ma version"
+      description: "<one plain sentence describing what the local version contains>"
+    - label: "Garder la version reçue"
+      description: "<one plain sentence describing what the incoming version contains>"
+    - label: "Combiner les deux"      ← only if applicable
+      description: "<one plain sentence describing the combined result>"
+    - label: "Me montrer les deux versions"
+      description: "Afficher le contenu des deux versions avant de choisir"
 ```
 
-If "Show me the full diff" → display both versions clearly formatted, then ask again.
+If "Me montrer les deux versions" → display both versions in plain readable form (not raw git markers), then ask again.
 
 Apply the chosen resolution:
-- Rewrite the file with the conflict markers replaced by the chosen content.
+- Rewrite the file with the chosen content in place of the conflict block.
 - Do **not** leave any `<<<<<<<`, `=======`, or `>>>>>>>` markers in the file.
 
 Once all blocks in a file are resolved, move to the next file in `conflictedFiles`.
