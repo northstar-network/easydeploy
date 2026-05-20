@@ -15,62 +15,26 @@ Pull the latest changes from the remote, resolve any conflicts, then commit and 
 
 ---
 
-## Step 1 — Identify the target branch
+## Step 1 — Pull latest changes
 
 Run:
 
 ```bash
-git remote show origin 2>/dev/null | grep 'HEAD branch'
-```
-
-- If a branch name is returned → store it as `targetBranch`.
-- If the command fails or returns nothing → test both common defaults:
-
-```bash
-git ls-remote --heads origin main master 2>/dev/null
-```
-
-- If `refs/heads/main` is present → `targetBranch = main`.
-- If `refs/heads/master` is present → `targetBranch = master`.
-- If neither exists → ask:
-
-```
-AskUserQuestion:
-  question: "Could not detect the default branch. Which branch should be used?"
-  header: "Target branch"
-  options:
-    - label: "main"
-    - label: "master"
-    - label: "I'll type the branch name"
-      description: "Enter the branch name manually"
-```
-
-If "I'll type the branch name" → ask for free text (Other).
-
-Store as `targetBranch`.
-
----
-
-## Step 2 — Pull latest changes
-
-Run:
-
-```bash
-git pull origin <targetBranch>
+git pull --rebase
 ```
 
 Analyse the output:
 
-- **Success** (exit code 0, no `CONFLICT` in output) → go to **Step 4**.
-- **Conflicts detected** (`CONFLICT` appears in output) → go to **Step 3**.
-- **Permission / authentication error** (output contains `Permission denied`, `Repository not found`, `403`, `fatal: Authentication failed`, `ERROR: Repository not found`) → go to **Step 5**, then return to **Step 2** after resolution.
+- **Success** (exit code 0, no `CONFLICT` in output) → go to **Step 3**.
+- **Conflicts detected** (`CONFLICT` appears in output) → go to **Step 2**.
+- **Permission / authentication error** (output contains `Permission denied`, `Repository not found`, `403`, `fatal: Authentication failed`, `ERROR: Repository not found`) → go to **Step 4**, then return to **Step 1** after resolution.
 - **Other error** → show the raw output and stop.
 
 ---
 
-## Step 3 — Resolve conflicts
+## Step 2 — Resolve conflicts
 
-### 3.1 — List conflicted files
+### 2.1 — List conflicted files
 
 Run:
 
@@ -85,7 +49,7 @@ Found <n> file(s) with conflicts:
 <list of files>
 ```
 
-### 3.2 — Resolve each file
+### 2.2 — Resolve each file
 
 For **each file** in `conflictedFiles`:
 
@@ -136,7 +100,7 @@ Apply the chosen resolution:
 
 Once all blocks in a file are resolved, move to the next file in `conflictedFiles`.
 
-### 3.3 — Stage resolved files
+### 2.3 — Stage resolved files
 
 Once all files are resolved, run:
 
@@ -144,13 +108,13 @@ Once all files are resolved, run:
 git add <each resolved file>
 ```
 
-Then go to **Step 4**.
+Then go to **Step 3**.
 
 ---
 
-## Step 4 — Add, commit and push
+## Step 3 — Add, commit and push
 
-### 4.1 — Stage all changes
+### 3.1 — Stage all changes
 
 Run:
 
@@ -158,7 +122,7 @@ Run:
 git add -A
 ```
 
-### 4.2 — Check if there is anything to commit
+### 3.2 — Check if there is anything to commit
 
 Run:
 
@@ -169,7 +133,7 @@ git diff --cached --stat
 - If the output is **empty** → tell the user there is nothing to commit and stop.
 - Otherwise → use the output to generate the commit message.
 
-### 4.3 — Generate commit message
+### 3.3 — Generate commit message
 
 Analyse `git diff --cached --stat` output and the list of changed files.
 
@@ -199,7 +163,7 @@ If "I'll type a different message" → ask for free text (Other).
 
 Store as `commitMessage`.
 
-### 4.4 — Commit
+### 3.4 — Commit
 
 Run:
 
@@ -209,12 +173,12 @@ git commit -m "<commitMessage>"
 
 If the commit fails → show the raw error and stop.
 
-### 4.5 — Push
+### 3.5 — Push
 
 Run:
 
 ```bash
-git push origin <targetBranch>
+git push
 ```
 
 - **Success** → display final summary and stop:
@@ -222,20 +186,19 @@ git push origin <targetBranch>
 ```
 ✓ Changes pushed successfully.
 
-  Branch: <targetBranch>
   Commit: <commitMessage>
   Remote: <git remote get-url origin>
 ```
 
-- **Permission / authentication error** (same patterns as Step 2) → go to **Step 5**, then retry **Step 4.5** once after resolution.
-- **Rejected (non-fast-forward)** → the remote has new commits not yet pulled. Run `git pull origin <targetBranch>` again, handle any conflicts (Step 3), then retry Step 4.5.
+- **Permission / authentication error** (same patterns as Step 1) → go to **Step 4**, then retry **Step 3.5** once after resolution.
+- **Rejected (non-fast-forward)** → the remote has new commits not yet pulled. Run `git pull --rebase` again, handle any conflicts (Step 2), then retry Step 3.5.
 - **Other error** → show the raw output and stop.
 
 ---
 
-## Step 5 — SSH key and access management
+## Step 4 — SSH key and access management
 
-### 5.1 — Check for an existing SSH key
+### 4.1 — Check for an existing SSH key
 
 Run:
 
@@ -243,7 +206,7 @@ Run:
 ls ~/.ssh/id_ed25519.pub 2>/dev/null || ls ~/.ssh/id_rsa.pub 2>/dev/null
 ```
 
-- **Key found** → read its content (use the first key found). Store path as `sshKeyPath`, content as `sshPublicKey`. Go to **5.2**.
+- **Key found** → read its content (use the first key found). Store path as `sshKeyPath`, content as `sshPublicKey`. Go to **4.2**.
 - **No key found** → generate one. Get the user email first:
 
   ```bash
@@ -264,9 +227,9 @@ ls ~/.ssh/id_ed25519.pub 2>/dev/null || ls ~/.ssh/id_rsa.pub 2>/dev/null
   cat ~/.ssh/id_ed25519.pub
   ```
 
-  Store as `sshPublicKey`. Go to **5.2**.
+  Store as `sshPublicKey`. Go to **4.2**.
 
-### 5.2 — Add the SSH key to GitHub
+### 4.2 — Add the SSH key to GitHub
 
 Display the public key clearly:
 
@@ -300,9 +263,9 @@ AskUserQuestion:
 
 - "Not yet" → ask again (loop on this question).
 - "Cancel" → stop.
-- "Yes" → go to **5.3**.
+- "Yes" → go to **4.3**.
 
-### 5.3 — Request access to the repository
+### 4.3 — Request access to the repository
 
 Retrieve the project name from the remote URL:
 
@@ -328,9 +291,9 @@ AskUserQuestion:
   options:
     - label: "<detectedUsername>"
       description: "Detected from your git configuration (Recommended)"
-    - label: "I'll type my username"
-      description: "Enter your GitHub username manually"
 ```
+
+If `detectedUsername` is empty, or if the user picks "Other" → ask for free text input directly.
 
 Build the access request link:
 
@@ -365,12 +328,13 @@ AskUserQuestion:
 
 - "Not yet" → loop on this question.
 - "Cancel" → stop.
-- "Yes, access granted" → return to the step that triggered Step 5 (Step 2 or Step 4.5).
+- "Yes, access granted" → return to the step that triggered Step 4 (Step 1 or Step 3.5).
 
 ---
 
 ## Rules
 
+- **Empty remote (initial commit)** — if `git pull --rebase` fails with `couldn't find remote ref`, `no tracking information`, or `does not appear to be a git repository` (i.e. the remote exists but has no commits yet), skip the pull entirely and proceed directly to Step 3. For the push in Step 3.5, use `git push -u origin main` instead of `git push`.
 - **Never** run `git push --force` without explicit user confirmation.
 - **Never** delete or overwrite an SSH key that already exists — always reuse it.
 - **Never** leave conflict markers (`<<<<<<<`, `=======`, `>>>>>>>`) in any file after resolution.

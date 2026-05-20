@@ -102,12 +102,9 @@ AskUserQuestion:
   options:
     - label: "<detectedUsername>"       ← only show if detectedUsername is non-empty
       description: "Detected from your git configuration (Recommended)"
-    - label: "I'll type my username"
-      description: "Enter your GitHub username manually"
 ```
 
-If `detectedUsername` is empty → only show "I'll type my username".
-If the user picks "I'll type my username" → ask for free text input (Other).
+If `detectedUsername` is empty, or if the user picks "Other" → ask for free text input directly.
 
 Store as `githubUsername`.
 
@@ -127,9 +124,41 @@ Store as `permissionLink`.
 
 ## Scenario A — No git (create from scratch)
 
-The project has no git history and no remote. Initialize git locally first, then create the remote on GitHub.
+The project has no git history and no remote. Create the GitHub repo first, then initialize git locally and connect it.
 
-### A.1 — Initialize git locally
+### A.1 — Present the creation link
+
+Display:
+
+```
+To create the repository in the northstar-network organization, open this link:
+
+[<permissionLink>](<permissionLink>)
+
+The service will create the repository and provide you with its URL.
+```
+
+### A.2 — Ask for the repo URL
+
+Once the user has submitted the request and the repo is created, the external service provides a repo URL. Ask for it:
+
+```
+AskUserQuestion:
+  question: "What is the repository URL provided by the service?"
+  header: "Repo URL"
+  options:
+    - label: "I'll type the URL"
+      description: "Enter the URL given by github-permission-manager (SSH or HTTPS)"
+    - label: "I'll do it later"
+      description: "Stop here — re-run /github-setup once the repo is created"
+    - label: "Cancel"
+      description: "Stop here without doing anything"
+```
+
+- "I'll do it later" or "Cancel" → stop.
+- "I'll type the URL" → ask for free text input (Other). Store as `repoUrl`.
+
+### A.3 — Initialize git locally
 
 Run:
 
@@ -145,43 +174,12 @@ Display:
 ✓ Git repository initialized locally.
 ```
 
-### A.2 — Present the link
-
-Display:
-
-```
-Now let's create the repository on GitHub in the northstar-network organization.
-Open this link:
-
-[<permissionLink>](<permissionLink>)
-
-This will request repo creation on GitHub. Once approved and created, confirm below.
-```
-
-### A.3 — Wait for confirmation
-
-```
-AskUserQuestion:
-  question: "Have you opened the link and submitted the repo creation request?"
-  header: "Repo creation"
-  options:
-    - label: "Yes, it's created — continue"
-      description: "Connect the local repo to the new remote"
-    - label: "I'll do it later"
-      description: "Stop here — re-run /github-setup once the repo is created"
-    - label: "Cancel"
-      description: "Stop here without doing anything"
-```
-
-- "I'll do it later" or "Cancel" → stop.
-- "Yes, it's created — continue" → proceed to A.4.
-
 ### A.4 — Connect to the remote
 
 Run:
 
 ```bash
-git remote add origin git@github.com:northstar-network/<projectName>.git
+git remote add origin <repoUrl>
 ```
 
 If the command fails (non-zero exit) → show the error and stop.
@@ -191,31 +189,39 @@ Display:
 ```
 ✓ Remote configured.
 
-  Remote: git@github.com:northstar-network/<projectName>.git
+  Remote: <repoUrl>
 ```
 
-### A.5 — Optional first commit and push
+### A.5 — Initial commit
 
-```
-AskUserQuestion:
-  question: "Would you like to create an initial commit and push to GitHub now?"
-  header: "First push"
-  options:
-    - label: "Yes, create initial commit and push"
-      description: "Runs the github-commit skill to commit and push all files"
-    - label: "No, I'll do it myself"
-      description: "Stop here — the remote is configured, push when ready"
+Rename the local branch to `main`:
+
+```bash
+git branch -M main
 ```
 
-If "Yes" → invoke the `github-commit` skill.
+Stage all project files:
 
-If "No" → display final summary and stop:
+```bash
+git add -A
+```
+
+If either command fails (non-zero exit) → show the error and stop.
+
+Display:
+
+```
+✓ All files staged for initial commit.
+```
+
+Then invoke the `github-commit` skill to create the initial commit and push all files to the remote.
+
+Display final summary after github-commit completes:
 
 ```
 ✓ Done
 
-  Repository: https://github.com/northstar-network/<projectName>
-  Remote:     git@github.com:northstar-network/<projectName>.git
+  Repository: <repoUrl>
 ```
 
 ---
