@@ -249,20 +249,22 @@ For the Dockerfile, decide yourself based on what you read in Step 3 — **never
 
 Always use **development mode**: source code is always mounted as a volume from the host. No need to ask.
 
-Ask for the Traefik hostname:
+Ask for the Traefik hostname as a plain text message — **do NOT use AskUserQuestion**. Output exactly:
 
-```
-AskUserQuestion:
-  question: "What hostname should Traefik route to this service? (e.g. myapp.localhost or myapp.example.com)"
-  header: "Hostname"
-  options:
-    - label: "<projectName>.localhost"
-      description: "Use the project name as a local hostname (default)"
-    - label: "I'll type a custom hostname"
-      description: "Enter a custom domain or subdomain"
-```
+---
+**What hostname should Traefik use for this service?**
 
-If user picks "I'll type a custom hostname" → ask them to type it as free text (Other input).
+Default: `<projectName>.localhost`
+
+Examples: `myapp.localhost` · `api.localhost` · `myapp.example.com`
+
+✏️ Type your answer below, or confirm with "ok" to use the default.
+
+---
+
+Wait for the user's reply in the chat. Do not present any choices or buttons.
+If the user confirms without typing a custom value (e.g. "ok", "yes", "oui") → use `<projectName>.localhost`.
+Otherwise → use what they typed.
 
 Store: `traefikHostname`.
 

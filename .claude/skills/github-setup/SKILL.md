@@ -65,18 +65,22 @@ For **Scenario C**, also extract the current repo name from `existingRemoteUrl` 
 
 ### Ask the user
 
-```
-AskUserQuestion:
-  question: "What should the GitHub repository be named? (only letters, numbers, - and . allowed, max 100 chars)"
-  header: "Repo name"
-  options:
-    - label: "<suggestedName>"
-      description: "Suggested from the project folder name (Recommended)"
-    - label: "Type a custom name"
-      description: "Enter a custom repository name manually"
-```
+Ask as a plain text message — **do NOT use AskUserQuestion**. Output exactly:
 
-If the user picks "Type a custom name" → ask for free text input.
+---
+**What should the GitHub repository be named?**
+
+Default: `<suggestedName>`
+
+Examples: `my-app` · `api-server` · `front-end`
+
+✏️ Type your answer below, or confirm with "ok" to use the default.
+
+---
+
+Wait for the user's reply in the chat. Do not present any choices or buttons.
+If the user confirms without typing a custom value (e.g. "ok", "yes", "oui") → use `<suggestedName>`.
+Otherwise → use what they typed.
 
 **Validate the name**: must match `^[a-zA-Z0-9][a-zA-Z0-9._-]{0,99}$` and must not be empty.
 If invalid → explain the constraint and ask again.
@@ -93,22 +97,36 @@ Try to detect in order:
 2. If empty, run `git config --get user.email` → extract the part before `@` as `detectedUsername`.
 3. If still empty → `detectedUsername` is blank.
 
-Ask the user to confirm:
+Ask as a plain text message — **do NOT use AskUserQuestion**.
 
-```
-AskUserQuestion:
-  question: "What is your GitHub username?"
-  header: "GitHub username"
-  options:
-    - label: "<detectedUsername>"
-      description: "Detected from your git configuration (Recommended)"
-    - label: "Type my username"
-      description: "Enter your GitHub username manually"
-```
+If `detectedUsername` is not empty, output exactly:
 
-If `detectedUsername` is empty → skip option 1 and ask for free text input directly.
-If the user picks "Type my username" → ask for free text input.
+---
+**What is your GitHub username?**
 
+Default: `<detectedUsername>`
+
+Examples: `john-doe` · `jdoe` · `johnsmith42`
+
+✏️ Type your answer below, or confirm with "ok" to use the default.
+
+---
+
+If the user confirms without typing → use `<detectedUsername>`.
+Otherwise → use what they typed.
+
+If `detectedUsername` is empty, output exactly:
+
+---
+**What is your GitHub username?**
+
+Examples: `john-doe` · `jdoe` · `johnsmith42`
+
+✏️ Type your answer below.
+
+---
+
+Wait for the user's reply in the chat. Do not present any choices or buttons.
 Store as `githubUsername`.
 
 ---
@@ -143,23 +161,24 @@ The service will create the repository and provide you with its URL.
 
 ### A.2 — Ask for the repo URL
 
-Once the user has submitted the request and the repo is created, the external service provides a repo URL. Ask for it:
+Once the user has submitted the request and the repo is created, the external service provides a repo URL. Ask as a plain text message — **do NOT use AskUserQuestion**. Output exactly:
 
-```
-AskUserQuestion:
-  question: "What is the repository URL provided by the service?"
-  header: "Repo URL"
-  options:
-    - label: "I'll type the URL"
-      description: "Enter the URL given by github-permission-manager (SSH or HTTPS)"
-    - label: "I'll do it later"
-      description: "Stop here — re-run /github-setup once the repo is created"
-    - label: "Cancel"
-      description: "Stop here without doing anything"
-```
+---
+**What is the repository URL?**
 
-- "I'll do it later" or "Cancel" → stop.
-- "I'll type the URL" → ask for free text input (Other). Store as `repoUrl`.
+Default: `git@github.com:northstar-network/<projectName>.git`
+
+Examples: `git@github.com:northstar-network/my-app.git`
+
+✏️ Type your answer below, or confirm with "ok" to use the default.
+
+---
+
+Wait for the user's reply in the chat. Do not present any choices or buttons.
+If the user confirms without typing → use `git@github.com:northstar-network/<projectName>.git`.
+Otherwise → use what they pasted.
+
+Store as `repoUrl`.
 
 ### A.3 — Initialize git locally
 
