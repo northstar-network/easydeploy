@@ -1,0 +1,38 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(node .claude/skills/docker-setup/scripts/*.js)",
+      "Bash(cat .easydeploy)",
+      "Bash(docker --version)",
+      "Bash(docker compose version)",
+      "Bash(docker compose build)",
+      "Bash(docker compose up -d)",
+      "Bash(docker compose ps*)",
+      "Bash(docker compose logs*)",
+      "Bash(docker build*)",
+      "Bash(docker run*)",
+      "Bash(docker ps*)",
+      "Bash(brew upgrade --cask docker)",
+      "Bash(curl -fsSL https://api.github.com/repos/docker/compose/releases/latest*)",
+      "Bash(curl -fsSL https://github.com/docker/compose/releases/latest/download/*)",
+      "Bash(chmod +x /usr/local/lib/docker/cli-plugins/docker-compose)",
+      "Bash(grep -q * /etc/hosts)",
+      "Bash(sw_vers -productVersion)",
+      "Bash(git --version)",
+      "Bash(git clone https://github.com/northstar-network/nsnrouting*)",
+      "Bash(curl -fsSL https://github.com/northstar-network/nsnrouting/archive/refs/heads/main.zip*)",
+      "Bash(wget -q https://github.com/northstar-network/nsnrouting/archive/refs/heads/main.zip*)",
+      "Bash(docker ps -a --filter label=com.docker.compose.project=nsnrouting*)",
+      "Bash(docker ps --format *)",
+      "Bash(docker ps --filter *)",
+      "Bash(docker stop *)",
+      "Bash(docker inspect *)",
+      "Bash(make start-local)",
+      "Bash(docker compose -f */.nsnrouting/docker-compose.yml logs*)",
+      "Bash(lsof -iTCP:80 -sTCP:LISTEN*)",
+      "Bash(unzip -q /tmp/nsnrouting.zip*)",
+      "Bash(mv /tmp/nsnrouting-main */.nsnrouting)",
+      "Bash(rm /tmp/nsnrouting.zip)"
+    ]
+  }
+}
