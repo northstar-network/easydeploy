@@ -127,23 +127,38 @@ Store as `permissionLink`.
 
 ## Scenario A — No git (create from scratch)
 
-The project has no git history and no remote. We create the GitHub repo first, then initialize locally.
+The project has no git history and no remote. Initialize git locally first, then create the remote on GitHub.
 
-### A.1 — Present the link
+### A.1 — Initialize git locally
+
+Run:
+
+```bash
+git init
+```
+
+If the command fails (non-zero exit) → show the error and stop.
 
 Display:
 
 ```
-This project is not yet linked to a GitHub repository.
+✓ Git repository initialized locally.
+```
 
-To create it in the northstar-network organization, open this link:
+### A.2 — Present the link
+
+Display:
+
+```
+Now let's create the repository on GitHub in the northstar-network organization.
+Open this link:
 
 [<permissionLink>](<permissionLink>)
 
 This will request repo creation on GitHub. Once approved and created, confirm below.
 ```
 
-### A.2 — Wait for confirmation
+### A.3 — Wait for confirmation
 
 ```
 AskUserQuestion:
@@ -151,7 +166,7 @@ AskUserQuestion:
   header: "Repo creation"
   options:
     - label: "Yes, it's created — continue"
-      description: "Initialize git locally and connect to the new remote"
+      description: "Connect the local repo to the new remote"
     - label: "I'll do it later"
       description: "Stop here — re-run /github-setup once the repo is created"
     - label: "Cancel"
@@ -159,28 +174,27 @@ AskUserQuestion:
 ```
 
 - "I'll do it later" or "Cancel" → stop.
-- "Yes, it's created — continue" → proceed to A.3.
+- "Yes, it's created — continue" → proceed to A.4.
 
-### A.3 — Initialize and connect
+### A.4 — Connect to the remote
 
-Run in sequence:
+Run:
 
 ```bash
-git init
 git remote add origin git@github.com:northstar-network/<projectName>.git
 ```
 
-Confirm both commands succeeded (non-zero exit → show error and stop).
+If the command fails (non-zero exit) → show the error and stop.
 
 Display:
 
 ```
-✓ Git initialized and remote configured.
+✓ Remote configured.
 
   Remote: git@github.com:northstar-network/<projectName>.git
 ```
 
-### A.4 — Optional first commit and push
+### A.5 — Optional first commit and push
 
 ```
 AskUserQuestion:
