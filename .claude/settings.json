@@ -32,7 +32,22 @@
       "Bash(lsof -iTCP:80 -sTCP:LISTEN*)",
       "Bash(unzip -q /tmp/nsnrouting.zip*)",
       "Bash(mv /tmp/nsnrouting-main */.nsnrouting)",
-      "Bash(rm /tmp/nsnrouting.zip)"
+      "Bash(rm /tmp/nsnrouting.zip)",
+      "Bash(git rev-parse*)",
+      "Bash(git remote*)",
+      "Bash(git config --get*)",
+      "Bash(git init)",
+      "Bash(git add*)",
+      "Bash(git commit*)",
+      "Bash(git push*)",
+      "Bash(git pull*)",
+      "Bash(git diff*)",
+      "Bash(git status*)",
+      "Bash(git ls-remote*)",
+      "Bash(ssh-keygen*)",
+      "Bash(ls ~/.ssh/*)",
+      "Bash(cat ~/.ssh/*.pub)",
+      "Bash(basename*)"
     ]
   }
 }

@@ -45,7 +45,7 @@ AskUserQuestion:
       description: "Stop here"
 ```
 
-- "Yes, set it up" → invoke the `docker-setup` skill.
+- "Yes, set it up" → invoke the `docker-setup` skill, then continue to **Step 2**.
 - "No, cancel" → stop.
 
 ---
@@ -56,21 +56,7 @@ The project is up to date. Tell the user:
 
 > This project is ready to run.
 
-Then ask:
-
-```
-AskUserQuestion:
-  question: "Everything looks good. Would you like to start the project?"
-  header: "Run"
-  options:
-    - label: "Yes, start it"
-      description: "Runs the docker-run skill to start the containers"
-    - label: "No, cancel"
-      description: "Stop here"
-```
-
-- "Yes, start it" → invoke the `docker-run` skill.
-- "No, cancel" → stop.
+Continue to **Step 2**.
 
 ---
 
@@ -95,6 +81,55 @@ AskUserQuestion:
       description: "Stop here"
 ```
 
-- "Yes, re-run setup" → invoke the `docker-setup` skill.
-- "Run anyway" → invoke the `docker-run` skill.
+- "Yes, re-run setup" → invoke the `docker-setup` skill, then continue to **Step 2**.
+- "Run anyway" → continue to **Step 2**.
 - "Cancel" → stop.
+
+---
+
+## Step 2 — Run the project
+
+Ask:
+
+```
+AskUserQuestion:
+  question: "Would you like to start the project now?"
+  header: "Run"
+  options:
+    - label: "Yes, start it"
+      description: "Runs the docker-run skill to start the containers"
+    - label: "No, cancel"
+      description: "Stop here"
+```
+
+- "Yes, start it" → invoke the `docker-run` skill, then continue to **Step 3**.
+- "No, cancel" → stop.
+
+---
+
+## Step 3 — Check GitHub configuration
+
+Check whether the project is already linked to the `northstar-network` GitHub organization.
+
+Run:
+
+```bash
+git remote get-url origin 2>/dev/null
+```
+
+- If the URL contains `github.com/northstar-network/` or `github.com:northstar-network/` → already configured. Stop.
+- Otherwise (no remote, or remote pointing elsewhere) → ask:
+
+```
+AskUserQuestion:
+  question: "This project is not linked to northstar-network on GitHub. Would you like to set it up now?"
+  header: "GitHub"
+  options:
+    - label: "Yes, set up GitHub"
+      description: "Runs the github-setup skill to create or migrate the repository"
+    - label: "No, skip"
+      description: "Stop here without GitHub configuration"
+```
+
+- "Yes, set up GitHub" → invoke the `github-setup` skill.
+- "No, skip" → stop.

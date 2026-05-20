@@ -1,0 +1,333 @@
+---
+name: github-setup
+description: >
+  Configure or migrate a GitHub repository to the northstar-network organization.
+  Checks if a git configuration exists, verifies it belongs to northstar-network,
+  and either creates a new repo or migrates an existing one.
+  Trigger phrases: "github setup", "setup github", "create repo", "configure git",
+  "migrate to northstar", "push to github", "configurer git", "créer un repo".
+version: 1.0.0
+---
+
+# github-setup
+
+Check the git configuration of the current project and ensure it is linked to the
+`northstar-network` GitHub organization. Creates a new repo or migrates an existing one as needed.
+
+## Step 1 — Check for .git
+
+Run:
+
+```bash
+git rev-parse --is-inside-work-tree 2>/dev/null
+```
+
+- If the command **fails or returns nothing** → no `.git` directory found. Go to **[Scenario A — No git]**.
+- If it returns `true` → a git repo exists. Continue to Step 2.
+
+## Step 2 — Check the remote
+
+Run:
+
+```bash
+git remote get-url origin 2>/dev/null
+```
+
+- If the command **returns nothing or errors** → no remote configured. Go to **[Scenario A — No git]** (treat same as no repo: we need to create one on NSN and wire it up).
+- If the URL contains `github.com/northstar-network/` or `github.com:northstar-network/` → Go to **[Scenario B — Already configured]**.
+- Otherwise → Go to **[Scenario C — Migration]**.
+
+Store the detected URL as `existingRemoteUrl`.
+
+---
+
+## Step 3 — Determine repo name
+
+This step applies to **Scenarios A and C**.
+
+### Deduce from context
+
+Get the project folder name:
+
+```bash
+basename "$(git rev-parse --show-toplevel 2>/dev/null || pwd)"
+```
+
+Sanitize it for GitHub:
+- Lowercase
+- Replace spaces and underscores with `-`
+- Remove characters that are not `a-z`, `0-9`, `-`, `.`
+- Truncate to 100 characters
+
+Store as `suggestedName`.
+
+For **Scenario C**, also extract the current repo name from `existingRemoteUrl` as a second suggestion.
+
+### Ask the user
+
+```
+AskUserQuestion:
+  question: "What should the GitHub repository be named? (only letters, numbers, - and . allowed, max 100 chars)"
+  header: "Repo name"
+  options:
+    - label: "<suggestedName>"
+      description: "Suggested from the project folder name (Recommended)"
+    - label: "I'll type a custom name"
+      description: "Enter a custom repository name"
+```
+
+If the user picks "I'll type a custom name" → ask for free text input (Other).
+
+**Validate the name**: must match `^[a-zA-Z0-9][a-zA-Z0-9._-]{0,99}$` and must not be empty.
+If invalid → explain the constraint and ask again.
+
+Store as `projectName`.
+
+---
+
+## Step 4 — Determine GitHub username
+
+Try to detect in order:
+
+1. Run `git config --get github.user` → if non-empty, use it as `detectedUsername`.
+2. If empty, run `git config --get user.email` → extract the part before `@` as `detectedUsername`.
+3. If still empty → `detectedUsername` is blank.
+
+Ask the user to confirm:
+
+```
+AskUserQuestion:
+  question: "What is your GitHub username?"
+  header: "GitHub username"
+  options:
+    - label: "<detectedUsername>"       ← only show if detectedUsername is non-empty
+      description: "Detected from your git configuration (Recommended)"
+    - label: "I'll type my username"
+      description: "Enter your GitHub username manually"
+```
+
+If `detectedUsername` is empty → only show "I'll type my username".
+If the user picks "I'll type my username" → ask for free text input (Other).
+
+Store as `githubUsername`.
+
+---
+
+## Step 5 — Generate the permission link
+
+Build the link:
+
+```
+https://github-permission-manager.n10.xyz/<projectName>/<githubUsername>/create
+```
+
+Store as `permissionLink`.
+
+---
+
+## Scenario A — No git (create from scratch)
+
+The project has no git history and no remote. We create the GitHub repo first, then initialize locally.
+
+### A.1 — Present the link
+
+Display:
+
+```
+This project is not yet linked to a GitHub repository.
+
+To create it in the northstar-network organization, open this link:
+
+[<permissionLink>](<permissionLink>)
+
+This will request repo creation on GitHub. Once approved and created, confirm below.
+```
+
+### A.2 — Wait for confirmation
+
+```
+AskUserQuestion:
+  question: "Have you opened the link and submitted the repo creation request?"
+  header: "Repo creation"
+  options:
+    - label: "Yes, it's created — continue"
+      description: "Initialize git locally and connect to the new remote"
+    - label: "I'll do it later"
+      description: "Stop here — re-run /github-setup once the repo is created"
+    - label: "Cancel"
+      description: "Stop here without doing anything"
+```
+
+- "I'll do it later" or "Cancel" → stop.
+- "Yes, it's created — continue" → proceed to A.3.
+
+### A.3 — Initialize and connect
+
+Run in sequence:
+
+```bash
+git init
+git remote add origin git@github.com:northstar-network/<projectName>.git
+```
+
+Confirm both commands succeeded (non-zero exit → show error and stop).
+
+Display:
+
+```
+✓ Git initialized and remote configured.
+
+  Remote: git@github.com:northstar-network/<projectName>.git
+```
+
+### A.4 — Optional first commit and push
+
+```
+AskUserQuestion:
+  question: "Would you like to create an initial commit and push to GitHub now?"
+  header: "First push"
+  options:
+    - label: "Yes, create initial commit and push"
+      description: "Runs the github-commit skill to commit and push all files"
+    - label: "No, I'll do it myself"
+      description: "Stop here — the remote is configured, push when ready"
+```
+
+If "Yes" → invoke the `github-commit` skill.
+
+If "No" → display final summary and stop:
+
+```
+✓ Done
+
+  Repository: https://github.com/northstar-network/<projectName>
+  Remote:     git@github.com:northstar-network/<projectName>.git
+```
+
+---
+
+## Scenario B — Already configured
+
+The remote already points to `northstar-network`. Nothing to do.
+
+Extract the repo name from the remote URL and display:
+
+```
+✓ This project is already linked to northstar-network.
+
+  Remote: <existingRemoteUrl>
+  Repo:   https://github.com/northstar-network/<repoName>
+
+No changes needed.
+```
+
+Stop.
+
+---
+
+## Scenario C — Migration
+
+The project has a remote that is not `northstar-network`. We create a new NSN repo and update the remote.
+
+### C.1 — Show the current situation
+
+Display:
+
+```
+This project is currently linked to a remote outside northstar-network:
+
+  Current remote: <existingRemoteUrl>
+
+To migrate it, we'll create a new repository in northstar-network and update your local remote.
+```
+
+### C.2 — Go to Step 3 (repo name) and Step 4 (username) if not done yet
+
+Use the current repo name from `existingRemoteUrl` as the first suggestion in Step 3.
+
+### C.3 — Present the link
+
+Display:
+
+```
+Open this link to request the new repository in northstar-network:
+
+[<permissionLink>](<permissionLink>)
+
+Once the repo is created on GitHub, confirm below.
+```
+
+### C.4 — Wait for confirmation
+
+```
+AskUserQuestion:
+  question: "Have you opened the link and submitted the repo creation request?"
+  header: "Repo creation"
+  options:
+    - label: "Yes, it's created — update my remote"
+      description: "Updates your local git remote to point to northstar-network"
+    - label: "I'll do it later"
+      description: "Stop here — re-run /github-setup once the repo is created"
+    - label: "Cancel"
+      description: "Stop here without doing anything"
+```
+
+- "I'll do it later" or "Cancel" → stop.
+- "Yes, it's created — update my remote" → proceed to C.5.
+
+### C.5 — Update the remote
+
+Run:
+
+```bash
+git remote set-url origin git@github.com:northstar-network/<projectName>.git
+```
+
+Confirm it succeeded:
+
+```bash
+git remote get-url origin
+```
+
+Display:
+
+```
+✓ Remote updated.
+
+  Old remote: <existingRemoteUrl>
+  New remote: git@github.com:northstar-network/<projectName>.git
+```
+
+### C.6 — Optional push
+
+```
+AskUserQuestion:
+  question: "Would you like to push your current branch to the new remote now?"
+  header: "Push"
+  options:
+    - label: "Yes, push now"
+      description: "Runs the github-commit skill to pull, commit and push"
+    - label: "No, I'll do it myself"
+      description: "Stop here — run /github-commit when ready"
+```
+
+If "Yes" → invoke the `github-commit` skill.
+
+If "No" → display final summary and stop:
+
+```
+✓ Migration complete
+
+  Repository: https://github.com/northstar-network/<projectName>
+  Remote:     git@github.com:northstar-network/<projectName>.git
+```
+
+---
+
+## Rules
+
+- **Never** run `git push --force` without explicit user confirmation.
+- **Never** run `git remote remove` or `git remote rename` without explicit user confirmation.
+- **Never** skip name validation — an invalid GitHub repo name will cause the link to fail.
+- Always show the full `permissionLink` as a clickable markdown link.
+- If any git command fails, show the raw error output before stopping.
