@@ -47,10 +47,10 @@ Store the list as `conflictedFiles`.
 Display a simple, reassuring message — no technical jargon:
 
 ```
-Deux personnes ont modifié les mêmes fichiers en même temps.
-Pas de panique, on va régler ça ensemble, fichier par fichier.
+Two people modified the same files at the same time.
+Don't worry, we'll sort this out together, file by file.
 
-Fichiers concernés (<n>) :
+Affected files (<n>):
 <list of files>
 ```
 
@@ -74,18 +74,18 @@ For each conflict block:
 
 **Explain the situation in plain language**, as if talking to someone who has never used git. Do not use technical terms like "HEAD", "merge", "branch", "commit", "remote", or "diff". Instead, describe concretely what each version contains and why there is a disagreement. Example:
 
-> Dans le fichier `config.js`, deux modifications différentes ont été faites sur la même ligne.
-> - **Votre version** : le port est réglé sur 3000
-> - **La version reçue** : le port est réglé sur 8080
-> Laquelle voulez-vous garder ?
+> In file `config.js`, two different changes were made to the same line.
+> - **Your version**: the port is set to 3000
+> - **Incoming version**: the port is set to 8080
+> Which one do you want to keep?
 
 Build 1 to 3 proposals depending on complexity:
 
 | Proposal | When to suggest |
 |---|---|
-| **Garder ma version** | The local version is more relevant or more recent |
-| **Garder la version reçue** | The incoming version is more complete or supersedes the local one |
-| **Combiner les deux** | Both versions bring something useful — propose a merged result that keeps both contributions |
+| **Keep my version** | The local version is more relevant or more recent |
+| **Keep the incoming version** | The incoming version is more complete or supersedes the local one |
+| **Combine both** | Both versions bring something useful — propose a merged result that keeps both contributions |
 
 Describe each option in a single plain sentence focused on the content, not the git mechanics.
 
@@ -93,20 +93,20 @@ Ask:
 
 ```
 AskUserQuestion:
-  question: "Fichier <filename> — désaccord <n>/<total>. Quelle version voulez-vous garder ?"
-  header: "Désaccord"
+  question: "File <filename> — conflict <n>/<total>. Which version do you want to keep?"
+  header: "Conflict"
   options:
-    - label: "Garder ma version"
+    - label: "Keep my version"
       description: "<one plain sentence describing what the local version contains>"
-    - label: "Garder la version reçue"
+    - label: "Keep the incoming version"
       description: "<one plain sentence describing what the incoming version contains>"
-    - label: "Combiner les deux"      ← only if applicable
+    - label: "Combine both"      ← only if applicable
       description: "<one plain sentence describing the combined result>"
-    - label: "Me montrer les deux versions"
-      description: "Afficher le contenu des deux versions avant de choisir"
+    - label: "Show me both versions"
+      description: "Display the content of both versions before choosing"
 ```
 
-If "Me montrer les deux versions" → display both versions in plain readable form (not raw git markers), then ask again.
+If "Show me both versions" → display both versions in plain readable form (not raw git markers), then ask again.
 
 Apply the chosen resolution:
 - Rewrite the file with the chosen content in place of the conflict block.
@@ -136,7 +136,15 @@ Run:
 git add -A
 ```
 
-### 3.2 — Check if there is anything to commit
+### 3.2 — Code review
+
+Invoke the `code-review` skill with the following parameter:
+
+- `context`: "Checking before commit"
+
+Wait for the skill to complete before continuing. If the skill applied fixes, the affected files are already re-staged — no additional `git add` is needed.
+
+### 3.3 — Check if there is anything to commit
 
 Run:
 
@@ -147,7 +155,7 @@ git diff --cached --stat
 - If the output is **empty** → tell the user there is nothing to commit and stop.
 - Otherwise → use the output to generate the commit message.
 
-### 3.3 — Generate commit message
+### 3.4 — Generate commit message
 
 Analyse `git diff --cached --stat` output and the list of changed files.
 
@@ -177,7 +185,7 @@ If "I'll type a different message" → ask for free text (Other).
 
 Store as `commitMessage`.
 
-### 3.4 — Commit
+### 3.5 — Commit
 
 Run:
 
@@ -187,7 +195,7 @@ git commit -m "<commitMessage>"
 
 If the commit fails → show the raw error and stop.
 
-### 3.5 — Push
+### 3.6 — Push
 
 Run:
 
@@ -204,8 +212,8 @@ git push
   Remote: <git remote get-url origin>
 ```
 
-- **Permission / authentication error** (same patterns as Step 1) → go to **Step 4**, then retry **Step 3.5** once after resolution.
-- **Rejected (non-fast-forward)** → the remote has new commits not yet pulled. Run `git pull --rebase` again, handle any conflicts (Step 2), then retry Step 3.5.
+- **Permission / authentication error** (same patterns as Step 1) → go to **Step 4**, then retry **Step 3.6** once after resolution.
+- **Rejected (non-fast-forward)** → the remote has new commits not yet pulled. Run `git pull --rebase` again, handle any conflicts (Step 2), then retry Step 3.6.
 - **Other error** → show the raw output and stop.
 
 ---
