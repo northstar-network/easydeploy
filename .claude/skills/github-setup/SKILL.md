@@ -368,6 +368,7 @@ If "No" → display final summary and stop:
 
 ## Rules
 
+- If invoked by the `easydeploy` skill, resume the `easydeploy` skill when this skill finishes — do not stop.
 - **Never** run `git push --force` without explicit user confirmation.
 - **Never** run `git remote remove` or `git remote rename` without explicit user confirmation.
 - **Never** skip name validation — an invalid GitHub repo name will cause the link to fail.

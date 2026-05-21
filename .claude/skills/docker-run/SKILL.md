@@ -109,3 +109,7 @@ Display a short message followed by a markdown clickable link:
 
 [http://<traefikHostname>](http://<traefikHostname>)
 ```
+
+## Rules
+
+- If invoked by the `easydeploy` skill, resume the `easydeploy` skill when this skill finishes — do not stop.

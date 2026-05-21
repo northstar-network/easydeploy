@@ -1,119 +1,74 @@
 # migrationdb-setup
 
-Détecte la base de données et le framework de migration du projet, puis ajoute un job `migrate` obligatoire avant `deploy` dans la CI GitHub Actions.
+Detects database usage in a project, ensures the database is managed by
+Docker Compose, and sets up a migration system if none exists.
 
-Les migrations de schéma sont jouées via `docker compose exec` sur le service applicatif — les fichiers de migration suivent l'organisation conventionnelle du framework et sont commités dans git pour être appliqués automatiquement à chaque deploy.
+## What it does
 
-## Usage
+1. **Detect database** — reads project files (`package.json`, `requirements.txt`,
+   `go.mod`, `.env`, `docker-compose.yml`, etc.) to determine whether the
+   project uses a database and which type (PostgreSQL, MySQL, MongoDB, Redis…).
 
+2. **Verify Docker Compose integration** — checks whether the database service
+   is already declared in `docker-compose.yml`. If not, offers to add it with
+   the correct image, environment variables, and persistent volume.
+
+3. **Data migration guidance** — if the user has an existing database to move
+   into Docker, shows the exact `pg_dump` / `mysqldump` / `mongodump` command
+   to export data and how to restore it once the container is running.
+
+4. **Detect migration system** — looks for Prisma, Knex, Sequelize, TypeORM,
+   Alembic, Django migrations, Rails ActiveRecord, golang-migrate, or plain
+   SQL files.
+
+5. **Create migration system** — if none is found, picks the best fit for the
+   project (based on language and existing dependencies) and creates the
+   necessary config files and folder structure.
+
+## Supported databases
+
+| Database | Docker image used |
+|---|---|
+| PostgreSQL | `postgres:16-alpine` |
+| MySQL | `mysql:8` |
+| MariaDB | `mariadb:11` |
+| MongoDB | `mongo:7` |
+| Redis | `redis:7-alpine` |
+
+## Supported migration systems
+
+| Language / Framework | System created |
+|---|---|
+| Node.js + Prisma already installed | Prisma migrate |
+| Node.js + TypeScript | Knex.js |
+| Node.js + JavaScript | Knex.js |
+| Python + Django | Django built-in |
+| Python (no Django) | Alembic |
+| Ruby on Rails | Rails ActiveRecord |
+| Go | golang-migrate |
+| Other | Raw SQL files in `db/migrations/` |
+
+## Invocation
+
+**Directly by the user:**
 ```
-/migrationdb-setup
-```
-
-Peut aussi être invoqué automatiquement par `/deploy-setup` si une base de données est détectée.
-
-## Ce que fait ce skill
-
-### 1. Détection de la base de données et du service applicatif
-
-Analyse `docker-compose.yml` pour identifier :
-- Le **service DB** : service dont l'image contient `postgres`, `mysql`, `mariadb`, `mongodb`, `mongo`
-- Le **service applicatif** : service avec une section `build:` ou dont le nom correspond au projet (`app`, `web`, `api`, `backend`…)
-
-Analyse également `.env.example` ou `.env` pour les variables de connexion DB.
-
-### 2. Détection du framework et du dossier de migrations
-
-| Fichier détecté | Framework | Commande | Dossier des migrations |
-|-----------------|-----------|----------|------------------------|
-| `artisan` | Laravel | `php artisan migrate --force` | `database/migrations/` |
-| `manage.py` | Django | `python manage.py migrate` | `<app>/migrations/` |
-| `Gemfile` + gem `rails` | Rails | `bundle exec rails db:migrate` | `db/migrate/` |
-| `mix.exs` + dep `ecto` | Elixir/Phoenix | `mix ecto.migrate` | `priv/repo/migrations/` |
-| `prisma/schema.prisma` | Prisma | `npx prisma migrate deploy` | `prisma/migrations/` |
-| `package.json` + `sequelize-cli` | Sequelize | `npx sequelize-cli db:migrate` | `migrations/` |
-
-### 3. Génération de la commande exec
-
-La migration est toujours exécutée **dans le container applicatif** via `docker compose exec` :
-
-```bash
-docker compose exec -T <appService> <migrationCommand>
-```
-
-Le restore du dump initial (si présent) est exécuté dans le **container DB** :
-
-```bash
-# PostgreSQL
-docker compose exec -T <dbService> psql -U <user> <db> < migrations/dump.sql
-
-# MySQL / MariaDB
-docker compose exec -T <dbService> mysql -u <user> -p<pass> <db> < migrations/dump.sql
-
-# MongoDB
-docker compose exec -T <dbService> mongorestore --db <db> --archive < migrations/dump.archive
-```
-
-### 4. Job `migrate` ajouté dans la CI
-
-Script SSH du job `migrate` généré :
-
-```bash
-# Premier déploiement : clone si le répertoire n'existe pas
-if [ ! -d "<serverPath>" ]; then
-  git clone <repoUrl> <serverPath>
-fi
-cd <serverPath>
-
-# Pull → les fichiers de migration du framework sont dans le checkout
-git pull origin main
-
-# Premier déploiement avec dump : restore depuis le checkout git
-if [ -f "migrations/dump.sql" ]; then
-  docker compose exec -T <dbService> psql -U <user> <db> < migrations/dump.sql
-fi
-
-# Toujours : jouer les migrations de schéma via docker compose exec
-docker compose exec -T <appService> php artisan migrate --force
+/migration-setup
 ```
 
-## Principe de fonctionnement des migrations
-
+**By another skill (`deploy-setup`):**
 ```
-Développeur
-  ├── Crée un fichier de migration (ex: database/migrations/2026_01_01_create_users.php)
-  ├── Commit + push → déclenche la CI
-  └── CI : migrate job
-        ├── git pull (fichier de migration présent dans le checkout)
-        └── docker compose exec -T app php artisan migrate --force
-              └── Applique la migration dans la DB du serveur
+Invoke the `migrationdb-setup` skill.
 ```
 
-Les fichiers de migration vivent dans le dossier conventionnel du framework et sont versionnés dans git comme n'importe quel autre fichier de code.
+## Prerequisites
 
-## Comportement par déploiement
+- `docker-compose.yml` must already exist (run `/docker-setup` first if not).
+- The project must be at the root of the working directory.
 
-| Situation | Ce que fait le job `migrate` |
-|-----------|------------------------------|
-| Premier déploiement + dump dans le checkout | Clone, restore le dump via `docker compose exec`, joue les migrations de schéma |
-| Premier déploiement sans dump | Clone, joue les migrations de schéma |
-| Déploiements suivants (dump supprimé du repo) | Pull, joue les migrations de schéma |
-| Déploiements suivants (dump encore dans le repo) | Pull, restore le dump à nouveau, joue les migrations de schéma — supprimer le dump dès que possible |
+## What it does NOT do
 
-## Fichiers modifiés
-
-| Fichier | Action |
-|---------|--------|
-| `.github/workflows/deploy.yml` | Modifié : ajout du job `migrate` et `needs: migrate` sur `deploy` |
-
-## Skills associés
-
-| Skill | Relation |
-|-------|----------|
-| `/deploy-setup` | Invoque `migrationdb-setup` après avoir créé la CI de base |
-| `/migrationdb` | Prépare le dump initial que le job `migrate` restaure au premier déploiement |
-
-## Prérequis
-
-- `.github/workflows/deploy.yml` doit exister (créé par `/deploy-setup`)
-- Le projet doit utiliser Docker Compose pour la base de données et le service applicatif
+- Does not create a `docker-compose.yml` from scratch — use `/docker-setup` for that.
+- Does not run dump or restore commands automatically — only shows the commands.
+- Does not install packages automatically (`npm install`, `pip install`, etc.)
+  — shows the command and lets the user run it.
+- Does not modify the CI workflow — that is handled by `deploy-setup`.

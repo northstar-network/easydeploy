@@ -90,6 +90,7 @@ basename "$(git rev-parse --show-toplevel 2>/dev/null || pwd)"
 
 ## Rules
 
+- If invoked by the `easydeploy` skill, resume the `easydeploy` skill when this skill finishes — do not stop.
 - **Never** push without first ensuring the CI workflow exists — always check in Step 1.
 - **Never** invoke `github-commit` if `deploy-setup` failed or was cancelled — stop instead.
 - The code review is handled inside `github-commit` — do not invoke `code-review` separately.

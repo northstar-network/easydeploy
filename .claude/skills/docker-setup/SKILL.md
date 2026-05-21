@@ -525,6 +525,7 @@ AskUserQuestion:
 
 ## Rules
 
+- If invoked by the `easydeploy` skill, resume the `easydeploy` skill when this skill finishes — do not stop.
 - **Never** run `docker compose down` or `docker rm` without explicit user confirmation.
 - **Never** modify an existing `docker-compose.yml` without showing a diff first.
 - **Never** modify the port or network configuration of nsnrouting — port 80 and the `proxy` network are fixed and must not be changed under any circumstance.
