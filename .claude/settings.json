@@ -47,7 +47,15 @@
       "Bash(ssh-keygen*)",
       "Bash(ls ~/.ssh/*)",
       "Bash(cat ~/.ssh/*.pub)",
-      "Bash(basename*)"
+      "Bash(basename*)",
+      "Bash(ls .github/workflows/deploy.yml*)",
+      "Bash(mkdir -p .github/workflows)",
+      "Bash(ls artisan 2>/dev/null)",
+      "Bash(ls manage.py 2>/dev/null)",
+      "Bash(ls mix.exs 2>/dev/null)",
+      "Bash(ls prisma/schema.prisma 2>/dev/null)",
+      "Bash(ls Gemfile 2>/dev/null)",
+      "Bash(grep -l sequelize-cli package.json 2>/dev/null)"
     ]
   }
 }
