@@ -332,7 +332,8 @@ services:
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.<projectName>.rule=Host(`${TRAEFIK_HOSTNAME}`)"
-      - "traefik.http.routers.<projectName>.entrypoints=web"
+      - "traefik.http.routers.<projectName>.entrypoints=${TRAEFIK_ENTRYPOINT:-web}"
+      - "traefik.http.routers.<projectName>.tls=${TRAEFIK_TLS:-false}"
       - "traefik.http.services.<projectName>.loadbalancer.server.port=<suggestedPort>"
     volumes:
       - .:/app
@@ -352,9 +353,11 @@ Always generate a `.env` file (or append to the existing one) with:
 
 ```env
 TRAEFIK_HOSTNAME=<traefikHostname>
+TRAEFIK_ENTRYPOINT=web
+TRAEFIK_TLS=false
 ```
 
-If a `.env` already exists, only add the `TRAEFIK_HOSTNAME` line — do not overwrite existing content.
+If a `.env` already exists, only add the missing lines — do not overwrite existing content.
 
 ### .easydeploy
 

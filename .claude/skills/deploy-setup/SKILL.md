@@ -115,6 +115,7 @@ jobs:
             fi
             cd <serverPath>
             git pull origin main
+            docker compose down
             docker compose --env-file .env.prod up -d --remove-orphans
 ```
 
@@ -194,6 +195,7 @@ Read `.github/workflows/deploy.yml` and make two changes:
             fi
             cd <serverPath>
             git pull origin main
+            docker compose down
             docker compose --env-file .env.prod up -d db
             <sshMigrateCommand>
 ```
