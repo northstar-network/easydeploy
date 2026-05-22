@@ -1,15 +1,16 @@
 ---
-name: docker-setup
+name: ea-docker-setup
 description: >
   Setup and run a project with Docker. Use this skill when the user wants to
   dockerize a project, run it in a container, setup docker-compose, create a
   Dockerfile, start docker containers, or check if Docker is installed.
   Trigger phrases: "docker setup", "dockerize", "run with docker",
-  "setup docker", "create dockerfile", "docker compose up", "start containers".
+  "setup docker", "create dockerfile", "docker compose up", "start containers",
+  "ea-docker-setup".
 version: 1.0.0
 ---
 
-# docker-setup
+# ea-docker-setup
 
 Setup a project with Docker: check dependencies, detect project type, generate missing config files, build and run containers.
 
@@ -18,7 +19,7 @@ Setup a project with Docker: check dependencies, detect project type, generate m
 Run:
 
 ```
-node .claude/skills/docker-setup/scripts/check-deps.js
+node .claude/skills/ea-docker-setup/scripts/check-deps.js
 ```
 
 Parse the JSON output:
@@ -180,7 +181,7 @@ AskUserQuestion:
 Run:
 
 ```
-node .claude/skills/docker-setup/scripts/check-docker-files.js
+node .claude/skills/ea-docker-setup/scripts/check-docker-files.js
 ```
 
 This returns:
@@ -497,7 +498,79 @@ AskUserQuestion:
 
 Continue to Step 8.
 
-## Step 8 — Summary (build only)
+## Step 8 — Generate README
+
+Read the project files to understand what the project does, then write a
+`README.md` at the project root.
+
+**Files to read for context** (read whichever exist):
+- `package.json` — name, description, scripts, dependencies
+- `requirements.txt` / `pyproject.toml` — Python dependencies and entry points
+- `go.mod` / `composer.json` — other language dependencies
+- Source files: `src/`, `app/`, `routes/`, `controllers/`, `models/` — to
+  understand the features implemented
+- Existing `README.md` — if one already exists, enrich it rather than
+  overwriting it; keep any sections the user has written
+- `docker-compose.yml` — services and volumes
+- `.env` — available configuration variables
+
+Write `README.md` with the following structure:
+
+```markdown
+# <projectName>
+
+<One or two sentences describing what the project does, inferred from the code.>
+
+## Features
+
+<Bulleted list of the main features detected in the source code. Be specific —
+describe what the app actually does, not generic phrases like "REST API".>
+
+## Tech stack
+
+<Bulleted list: language, framework, database if any, other notable dependencies.>
+
+## Getting started
+
+### Prerequisites
+
+- Docker and Docker Compose
+
+### Run locally
+
+\```bash
+# Clone the repository
+git clone <gitRepoUrl>
+cd <projectName>
+
+# Start the project
+/easydeploy
+\```
+
+The app will be available at: http://<traefikHostname>
+
+## Environment variables
+
+| Variable | Default | Description |
+|---|---|---|
+<Row for each variable found in .env, with its current value as default and a
+short description inferred from the variable name and usage in the code.>
+```
+
+If a `README.md` already exists:
+- Keep all sections the user has written.
+- Add or update only the sections above that are missing or outdated.
+- Do not remove content that was already there.
+
+Display:
+
+```
+✓ README.md written
+```
+
+---
+
+## Step 9 — Summary (build only)
 
 Display:
 
@@ -518,12 +591,12 @@ AskUserQuestion:
   header: "Run"
   options:
     - label: "Yes, start it"
-      description: "Runs the docker-run skill to start the containers"
+      description: "Runs the ea-docker-run skill to start the containers"
     - label: "No, I'll do it later"
-      description: "You can start it later with /docker-run"
+      description: "You can start it later with /ea-docker-run"
 ```
 
-- "Yes, start it" → invoke the `docker-run` skill.
+- "Yes, start it" → invoke the `ea-docker-run` skill.
 - "No, I'll do it later" → stop.
 
 ## Rules

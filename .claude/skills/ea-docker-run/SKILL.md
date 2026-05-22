@@ -1,15 +1,15 @@
 ---
-name: docker-run
+name: ea-docker-run
 description: >
   Start a Dockerized project. Use this skill when the user wants to run,
   start, or launch a project that has already been set up with Docker.
   Trigger phrases: "run", "start", "launch", "start the project",
   "run the project", "docker up", "start containers", "lancer le projet",
-  "démarrer le projet".
+  "démarrer le projet", "ea-docker-run".
 version: 1.0.0
 ---
 
-# docker-run
+# ea-docker-run
 
 Start a Dockerized project: ensure nsnrouting is running, then start the project containers.
 
@@ -18,10 +18,10 @@ Start a Dockerized project: ensure nsnrouting is running, then start the project
 Run:
 
 ```
-node .claude/skills/docker-setup/scripts/check-docker-files.js
+node .claude/skills/ea-docker-setup/scripts/check-docker-files.js
 ```
 
-- If `hasCompose: false` → tell the user the project has no `docker-compose.yml` and they should run `/docker-setup` first, then stop.
+- If `hasCompose: false` → tell the user the project has no `docker-compose.yml` and they should run `/ea-docker-setup` first, then stop.
 - If `hasCompose: true` → store `projectRoot` and `projectName`, continue to Step 2.
 
 ## Step 2 — Check and start nsnrouting
@@ -39,7 +39,7 @@ docker ps --filter "label=com.docker.compose.project=nsnrouting" --format "{{.Na
   docker ps -a --filter "label=com.docker.compose.project=nsnrouting" --format "{{.ID}}"
   ```
 
-  - If **empty** → nsnrouting is not installed. Tell the user to run `/docker-setup` first to install it, then stop.
+  - If **empty** → nsnrouting is not installed. Tell the user to run `/ea-docker-setup` first to install it, then stop.
   - If **non-empty** → nsnrouting is installed but stopped. Find its working directory:
 
     ```bash

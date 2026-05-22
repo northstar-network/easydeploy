@@ -1,15 +1,15 @@
 ---
-name: github-commit
+name: ea-github-commit
 description: >
   Pull the latest code, resolve conflicts intelligently, then add, commit and push.
   Handles SSH key setup and repo access requests if permission errors occur.
   Can be invoked by other skills or directly by the user.
   Trigger phrases: "commit", "push", "commit and push", "save my changes",
-  "envoyer le code", "commiter", "pousser le code".
+  "envoyer le code", "commiter", "pousser le code", "ea-github-commit".
 version: 1.0.0
 ---
 
-# github-commit
+# ea-github-commit
 
 Pull the latest changes from the remote, resolve any conflicts, then commit and push local changes.
 
@@ -138,7 +138,7 @@ git add -A
 
 ### 3.2 — Code review
 
-Invoke the `code-review` skill with the following parameter:
+Invoke the `ea-code-review` skill with the following parameter:
 
 - `context`: "Checking before commit"
 

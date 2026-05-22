@@ -1,15 +1,16 @@
 ---
-name: github-setup
+name: ea-github-setup
 description: >
   Configure or migrate a GitHub repository to the northstar-network organization.
   Checks if a git configuration exists, verifies it belongs to northstar-network,
   and either creates a new repo or migrates an existing one.
   Trigger phrases: "github setup", "setup github", "create repo", "configure git",
-  "migrate to northstar", "push to github", "configurer git", "créer un repo".
+  "migrate to northstar", "push to github", "configurer git", "créer un repo",
+  "ea-github-setup".
 version: 1.0.0
 ---
 
-# github-setup
+# ea-github-setup
 
 Check the git configuration of the current project and ensure it is linked to the
 `northstar-network` GitHub organization. Creates a new repo or migrates an existing one as needed.
@@ -236,9 +237,9 @@ Display:
 ✓ All files staged for initial commit.
 ```
 
-Then invoke the `github-commit` skill to create the initial commit and push all files to the remote.
+Then invoke the `ea-github-commit` skill to create the initial commit and push all files to the remote.
 
-Display final summary after github-commit completes:
+Display final summary after ea-github-commit completes:
 
 ```
 ✓ Done
@@ -309,7 +310,7 @@ AskUserQuestion:
     - label: "Yes, it's created — update my remote"
       description: "Updates your local git remote to point to northstar-network"
     - label: "I'll do it later"
-      description: "Stop here — re-run /github-setup once the repo is created"
+      description: "Stop here — re-run /ea-github-setup once the repo is created"
     - label: "Cancel"
       description: "Stop here without doing anything"
 ```
@@ -348,12 +349,12 @@ AskUserQuestion:
   header: "Push"
   options:
     - label: "Yes, push now"
-      description: "Runs the github-commit skill to pull, commit and push"
+      description: "Runs the ea-github-commit skill to pull, commit and push"
     - label: "No, I'll do it myself"
-      description: "Stop here — run /github-commit when ready"
+      description: "Stop here — run /ea-github-commit when ready"
 ```
 
-If "Yes" → invoke the `github-commit` skill.
+If "Yes" → invoke the `ea-github-commit` skill.
 
 If "No" → display final summary and stop:
 

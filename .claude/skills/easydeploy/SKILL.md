@@ -78,14 +78,14 @@ Each option corresponds to one skill to invoke. Include all applicable options
 
 | Condition | Option label | Skill |
 |---|---|---|
-| `dockerState = "not-setup"` | "Set up project" | `docker-setup` |
-| `dockerState = "outdated"` | "Update project setup (current: `<foundVersion>`)" | `docker-setup` |
-| `dockerState = "ready"` and `dockerRunning = false` | "Start project" | `docker-run` |
-| `dockerState = "ready"` and `dockerRunning = true` | "Restart project" | `docker-run` |
-| `githubState = "no-git"` or `"not-configured"` | "Set up GitHub" | `github-setup` |
-| `githubState = "configured"` | "Code review" | `code-review` |
-| `dockerState = "ready"` AND `githubState = "configured"` AND `ciState = "missing"` | "Set up CI / deploy" | `deploy-setup` |
-| `dockerState = "ready"` AND `githubState = "configured"` AND `ciState = "exists"` | "Deploy to production" | `deploy` |
+| `dockerState = "not-setup"` | "Set up project" | `ea-docker-setup` |
+| `dockerState = "outdated"` | "Update project setup (current: `<foundVersion>`)" | `ea-docker-setup` |
+| `dockerState = "ready"` and `dockerRunning = false` | "Start project" | `ea-docker-run` |
+| `dockerState = "ready"` and `dockerRunning = true` | "Restart project" | `ea-docker-run` |
+| `githubState = "no-git"` or `"not-configured"` | "Set up GitHub" | `ea-github-setup` |
+| `githubState = "configured"` | "Code review" | `ea-code-review` |
+| `dockerState = "ready"` AND `githubState = "configured"` AND `ciState = "missing"` | "Set up CI / deploy" | `ea-deploy-setup` |
+| `dockerState = "ready"` AND `githubState = "configured"` AND `ciState = "exists"` | "Deploy to production" | `ea-deploy` |
 
 Always add a final "Exit" option.
 

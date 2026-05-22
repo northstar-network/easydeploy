@@ -1,19 +1,19 @@
 ---
-name: deploy-setup
+name: ea-deploy-setup
 description: >
   Creates the GitHub Actions CI workflow for the project if it does not exist yet.
   Uses the nsndeploy model as a base template. Delegates database detection and
-  migration CI setup to the migrationdb-setup skill.
+  migration CI setup to the ea-migrationdb-setup skill.
   Trigger phrases: "deploy setup", "setup ci", "configurer la ci", "créer le workflow",
-  "setup github actions", "ci deploy".
+  "setup github actions", "ci deploy", "ea-deploy-setup".
 version: 1.0.0
 ---
 
-# deploy-setup
+# ea-deploy-setup
 
 Creates the GitHub Actions CI workflow for this project. Handles first-time deployments
 (directory does not exist on server yet). Delegates database and migration setup to
-`migrationdb-setup`.
+`ea-migrationdb-setup`.
 
 ---
 
@@ -131,9 +131,9 @@ Display:
 
 ## Step 4 — Database and migrations
 
-Invoke the `migrationdb-setup` skill. Wait for it to complete before continuing.
+Invoke the `ea-migrationdb-setup` skill. Wait for it to complete before continuing.
 
-After `migrationdb-setup` finishes, check whether a migration system is in
+After `ea-migrationdb-setup` finishes, check whether a migration system is in
 place — either one that already existed or one that was just created. To do
 this, inspect the project:
 
@@ -264,16 +264,41 @@ Display:
 
 ---
 
-## Step 6 — Summary
+## Step 6 — Update README with production info
+
+Read `README.md` if it exists. Add or update a `## Deployment` section with
+the production details — do not modify any other section:
+
+```markdown
+## Deployment
+
+This project is deployed automatically to production via GitHub Actions when
+a commit is pushed to the `main` branch.
+
+Production URL: https://<projectName>.easydeploy.tech
+```
+
+If `README.md` does not exist, create it with only this section.
 
 Display:
 
 ```
-✓ deploy-setup complete
+✓ README.md updated with production info
+```
+
+---
+
+## Step 7 — Summary
+
+Display:
+
+```
+✓ ea-deploy-setup complete
 
   Project : <projectName>
   CI file : .github/workflows/deploy.yml
   Server  : <serverPath>
+  URL     : https://<projectName>.easydeploy.tech
 ```
 
 ---

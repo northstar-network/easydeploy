@@ -1,12 +1,12 @@
 ---
-name: code-review
+name: ea-code-review
 description: >
   Analyses the current diff (or a provided diff) for security vulnerabilities
   and fatal errors. For each issue found, explains the situation in plain language
   and offers an automatic fix or the option to ignore.
-  Can be invoked directly or by another skill (e.g. github-commit).
+  Can be invoked directly or by another skill (e.g. ea-github-commit).
   Trigger phrases: "code review", "vérifier le code", "analyser le code", "review",
-  "check my code", "analyse mon code".
+  "check my code", "analyse mon code", "ea-code-review".
 version: 1.0.0
 ---
 
@@ -96,7 +96,7 @@ Do **not** flag:
 - Suggested refactoring
 - Minor warnings or optional best practices
 - `.env.prod` committed to the repository — this is intentional in the
-  easydeploy workflow. The file is generated automatically by `deploy-setup`
+  easydeploy workflow. The file is generated automatically by `ea-deploy-setup`
   and committed on purpose. Do not flag it as a security issue.
 
 Build an `issues` list of all problems found. Each entry contains:
@@ -195,7 +195,7 @@ Ignored issues do not prevent you from continuing.
 ```
 
 **Resume the calling skill** — do not stop:
-- If invoked by `github-commit` → return to **Step 3.3** (Check if there is anything to commit) and continue from there.
+- If invoked by `ea-github-commit` → return to **Step 3.3** (Check if there is anything to commit) and continue from there.
 - If invoked directly by the user → stop here.
 
 ---

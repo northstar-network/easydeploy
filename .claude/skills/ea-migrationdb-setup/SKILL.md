@@ -1,15 +1,16 @@
 ---
-name: migrationdb-setup
+name: ea-migrationdb-setup
 description: >
   Detect database usage in the project, ensure it is managed by docker-compose,
   and set up a migration system if none exists. Can be invoked directly or by
-  the deploy-setup skill.
+  the ea-deploy-setup skill.
   Trigger phrases: "migration setup", "setup database", "setup migrations",
-  "configure database", "add migration system", "database setup".
+  "configure database", "add migration system", "database setup",
+  "ea-migrationdb-setup".
 version: 1.0.0
 ---
 
-# migrationdb-setup
+# ea-migrationdb-setup
 
 Inspect the project to detect database usage, verify docker-compose integration,
 and ensure a migration system is in place for deployments.
@@ -119,8 +120,8 @@ Check whether a `docker-compose.yml` file exists at the project root.
 - **If it does not exist** → display:
 
   ```
-  No docker-compose.yml found. Run /docker-setup first to containerize
-  the project, then re-run /migration-setup to add the database.
+  No docker-compose.yml found. Run /ea-docker-setup first to containerize
+  the project, then re-run /ea-migrationdb-setup to add the database.
   ```
 
   Then stop.
@@ -611,7 +612,7 @@ Display a recap of everything that was done:
   Run migrations    : <migrateCommand>
 
 Next steps:
-  1. Run /docker-run to start your containers
+  1. Run /ea-docker-run to start your containers
   2. Run the following command to apply migrations:
 
        <migrateCommand>
@@ -625,5 +626,5 @@ Next steps:
 - **Always** run package installs and migration commands inside the app
   container via `docker compose exec <appService>` — never on the host machine.
 - If `docker-compose.yml` does not exist, stop and direct the user to
-  `/docker-setup` — do not create a new compose file here.
+  `/ea-docker-setup` — do not create a new compose file here.
 - Always adapt variable names to match what the project already uses.

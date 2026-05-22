@@ -1,10 +1,10 @@
 ---
-name: deploy
+name: ea-deploy
 description: >
-  Deploys the project to production. Checks that the CI workflow exists (runs deploy-setup
-  if not), then runs a code review and pushes the code via github-commit.
+  Deploys the project to production. Checks that the CI workflow exists (runs ea-deploy-setup
+  if not), then runs a code review and pushes the code via ea-github-commit.
   Trigger phrases: "deploy", "déployer", "push en prod", "envoyer en production",
-  "deploy to production", "mettre en prod".
+  "deploy to production", "mettre en prod", "ea-deploy".
 version: 1.0.0
 ---
 
@@ -25,9 +25,9 @@ ls .github/workflows/deploy.yml 2>/dev/null
 
 - **File absent** → the project has no CI configured. Tell the user:
 
-  > No CI workflow found. Running deploy-setup first.
+  > No CI workflow found. Running ea-deploy-setup first.
 
-  Invoke the `deploy-setup` skill. Wait for it to complete, then continue to Step 2.
+  Invoke the `ea-deploy-setup` skill. Wait for it to complete, then continue to Step 2.
 
 - **File found** → continue to Step 2.
 
@@ -35,21 +35,21 @@ ls .github/workflows/deploy.yml 2>/dev/null
 
 ## Step 2 — Review and push
 
-Invoke the `github-commit` skill.
+Invoke the `ea-github-commit` skill.
 
-The `github-commit` skill handles the full sequence:
+The `ea-github-commit` skill handles the full sequence:
 - Pull latest changes and resolve any conflicts
-- Run a code review (`code-review` skill) before committing
+- Run a code review (`ea-code-review` skill) before committing
 - Generate a commit message and ask for confirmation
 - Commit and push
 
-Wait for `github-commit` to complete.
+Wait for `ea-github-commit` to complete.
 
 ---
 
 ## Step 3 — Deployment summary
 
-Once `github-commit` has pushed successfully, display:
+Once `ea-github-commit` has pushed successfully, display:
 
 ```
 ✓ Deploy triggered
@@ -92,5 +92,5 @@ basename "$(git rev-parse --show-toplevel 2>/dev/null || pwd)"
 
 - If invoked by the `easydeploy` skill, resume the `easydeploy` skill when this skill finishes — do not stop.
 - **Never** push without first ensuring the CI workflow exists — always check in Step 1.
-- **Never** invoke `github-commit` if `deploy-setup` failed or was cancelled — stop instead.
-- The code review is handled inside `github-commit` — do not invoke `code-review` separately.
+- **Never** invoke `ea-github-commit` if `ea-deploy-setup` failed or was cancelled — stop instead.
+- The code review is handled inside `ea-github-commit` — do not invoke `ea-code-review` separately.
