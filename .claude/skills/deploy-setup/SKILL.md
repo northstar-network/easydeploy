@@ -236,6 +236,15 @@ Apply these overrides regardless of what `.env` contains:
   (`TRAEFIK_HOSTNAME`, `APP_URL`, `APP_HOST`, `BASE_URL`, `HOST`, or similar)
   → set to `<projectName>.easydeploy.tech`
 
+Always force the following Traefik production values, adding them to the file
+even if they are not present in `.env` or `docker-compose.yml`:
+
+```
+TRAEFIK_HOSTNAME=<projectName>.easydeploy.tech
+TRAEFIK_ENTRYPOINT=websecure
+TRAEFIK_TLS=true
+```
+
 All other variables — including database passwords, usernames, and any other
 credentials — keep the values resolved in 5.1 as-is.
 
