@@ -24,6 +24,7 @@ Also triggered automatically by `ea-deploy` when no CI workflow exists yet.
    - `TRAEFIK_ENTRYPOINT=websecure`
    - `TRAEFIK_TLS=true`
 6. **Updates README** — adds a Deployment section with the production URL
+7. **Calls `ea-deploy-backup`** — automatically sets up daily S3 backups (see [backup-setup.md](backup-setup.md))
 
 ## Generated files
 

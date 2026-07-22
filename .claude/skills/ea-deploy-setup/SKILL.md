@@ -3,7 +3,8 @@ name: ea-deploy-setup
 description: >
   Creates the GitHub Actions CI workflow for the project if it does not exist yet.
   Uses the nsndeploy model as a base template. Delegates database detection and
-  migration CI setup to the ea-migrationdb-setup skill.
+  migration CI setup to the ea-migrationdb-setup skill, then automatically sets up
+  S3 backups via the ea-deploy-backup skill.
   Trigger phrases: "deploy setup", "setup ci", "configurer la ci", "créer le workflow",
   "setup github actions", "ci deploy", "ea-deploy-setup".
 version: 1.0.0
@@ -13,7 +14,7 @@ version: 1.0.0
 
 Creates the GitHub Actions CI workflow for this project. Handles first-time deployments
 (directory does not exist on server yet). Delegates database and migration setup to
-`ea-migrationdb-setup`.
+`ea-migrationdb-setup`, then automatically sets up S3 backups via `ea-deploy-backup`.
 
 ---
 
@@ -300,6 +301,18 @@ Display:
   Server  : <serverPath>
   URL     : https://<projectName>.easydeploy.tech
 ```
+
+---
+
+## Step 8 — Automated backups
+
+Always invoke the `ea-deploy-backup` skill now, automatically — do not ask
+the user for confirmation first. Wait for it to complete before continuing.
+
+`ea-deploy-backup` handles its own detection (database, asset volumes) and
+wires the required S3 secrets into the CI workflow that was just created in
+Step 3. If it finds nothing to back up, it stops on its own — that's fine,
+resume normally.
 
 ---
 
