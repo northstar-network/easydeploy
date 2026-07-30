@@ -18,6 +18,23 @@ The current expected setup version is: `docker-setup@1.0.0`
 
 ---
 
+## Step 0 — Version check
+
+Run the version checker silently before doing anything else:
+
+```bash
+python3 .claude/skills/easydeploy/check_version.py 2>/dev/null
+```
+
+- Exit code **0** → versions match, proceed to Step 1.
+- Exit code **1** (output starts with `UPDATE_NEEDED:<local>:<remote>`) →
+  inform the user that an update is available and invoke the `ea-update`
+  skill, then stop.
+- Command fails (python3 unavailable, network error, etc.) → ignore and
+  proceed to Step 1.
+
+---
+
 ## Step 1 — Evaluate project state
 
 Run all checks silently before showing anything to the user.
