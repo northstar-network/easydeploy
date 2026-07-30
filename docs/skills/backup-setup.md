@@ -58,8 +58,13 @@ Retention: 7 days, enforced by `backup.sh` deleting older dated objects under th
 
 ## Restoring
 
+Run [`ea-restore`](restore.md) — it walks through picking a backup date and restoring it
+either into your local docker-compose database or back onto the production server.
+
+For an asset-volume restore, or any manual/scripted restore, `restore.sh` still takes
+`db`/`assets` directly:
+
 ```bash
-docker compose run --rm backup-cron /scripts/restore.sh db 2026-07-20 --yes
 docker compose run --rm backup-cron /scripts/restore.sh assets 2026-07-20 --yes
 ```
 

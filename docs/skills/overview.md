@@ -13,6 +13,7 @@
 | [`ea-deploy-setup`](deploy-setup.md) | `/deploy-setup` | Generates the GitHub Actions CI/CD workflow; delegates DB setup to `ea-migrationdb-setup` and backup setup to `ea-deploy-backup` |
 | [`ea-migrationdb-setup`](deploy-setup.md#database-and-migrations) | `/migrationdb-setup` | Detects DB usage, adds DB service to Compose, initialises migration system |
 | [`ea-deploy-backup`](backup-setup.md) | `/deploy-backup` | Sets up daily S3 backups (DB and/or assets) via a dedicated cron container |
+| [`ea-restore`](restore.md) | `/ea-restore` | Restores a dated DB backup, locally or to production |
 | [`ea-deploy`](deploy.md) | `/deploy` | Ensures CI exists, reviews code, pushes to trigger the production pipeline |
 
 ---
@@ -34,6 +35,9 @@
   │     └── ea-deploy-backup
   └── ea-github-commit
         └── ea-code-review
+
+/ea-restore (standalone — requires ea-deploy-backup already configured)
+  └── ea-github-commit (production branch only, to push the restore workflow)
 ```
 
 ---

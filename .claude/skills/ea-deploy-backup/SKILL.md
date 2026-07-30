@@ -366,12 +366,12 @@ needed, there is no network connection to make.
 plain local `docker compose up` — it only starts in production, when the
 deploy script explicitly passes `--profile backup` (Step 6).
 
-If asset or sqlite restore needs to be possible later, mount those volumes
-read-write instead of read-only if the user is expected to restore via this
-same container — default to read-only for the daily backup job; note in the
-Step 10 summary that a manual `docker compose run` with a writable mount is
-needed to actually execute `restore.sh assets` or `restore.sh db` (sqlite
-case).
+Default to read-only (`:ro`) on the sqlite/asset mounts here — the daily backup job only
+ever reads them. A sqlite restore needs that mount writable; `ea-restore`'s production
+branch checks for and drops the `:ro` suffix itself when it scaffolds the restore
+workflow, so this generator does not need to anticipate it. An asset-volume restore
+still needs the same treatment manually if ever required — out of scope for `ea-restore`
+today.
 
 ---
 
@@ -515,8 +515,14 @@ Configure these once at `Settings → Secrets and variables → Actions`
 
 ### Restoring a backup
 
+Run `ea-restore` (trigger phrases: "restore locally", "restore to production") — it
+walks through picking a backup date and restoring it either into your local
+docker-compose database or back onto the production server.
+
+For an asset-volume restore, or any manual/scripted restore, `restore.sh` still takes
+`db`/`assets` directly:
+
 ```bash
-docker compose run --rm backup-cron /scripts/restore.sh db 2026-07-20 --yes
 docker compose run --rm backup-cron /scripts/restore.sh assets 2026-07-20 --yes
 ```
 ```
