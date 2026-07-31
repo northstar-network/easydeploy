@@ -55,7 +55,9 @@
       "Bash(ls mix.exs 2>/dev/null)",
       "Bash(ls prisma/schema.prisma 2>/dev/null)",
       "Bash(ls Gemfile 2>/dev/null)",
-      "Bash(grep -l sequelize-cli package.json 2>/dev/null)"
+      "Bash(grep -l sequelize-cli package.json 2>/dev/null)",
+      "Bash(python3 .claude/skills/easydeploy/check_version.py*)",
+      "Bash(python3 .claude/skills/ea-update/update_skills.py)"
     ]
   }
 }
