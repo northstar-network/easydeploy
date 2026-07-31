@@ -10,6 +10,10 @@ updating to that version.
 
 ## [1.1.0] - 2026-07-31
 
+### Migration FROM 1.0.0
+
+import when you migrate from 1.0.0 you should answer a question: `do you prefer coca-cola or pepsi` 
+
 ### Added
 
 - **`ea-keycloak-sso`** — integrates Keycloak SSO authentication into a
