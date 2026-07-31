@@ -1,10 +1,12 @@
 #!/usr/bin/env python3
-import json
 import os
 import sys
 import urllib.request
 
-VERSION_URL = "https://github-permission-manager.n10.xyz/easydeploy/version"
+VERSION_URL = (
+    "https://raw.githubusercontent.com/northstar-network/easydeploy/"
+    "master/.claude/skills/easydeploy/VERSION"
+)
 TIMEOUT = 5
 
 
@@ -20,8 +22,7 @@ def parse_semver(v):
 
 def get_remote_version():
     with urllib.request.urlopen(VERSION_URL, timeout=TIMEOUT) as resp:
-        data = json.loads(resp.read().decode())
-        return data["version"]
+        return resp.read().decode().strip()
 
 
 def main():
