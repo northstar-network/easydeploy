@@ -8,6 +8,18 @@ updating to that version.
 
 ---
 
+## [1.1.2] - 2026-07-31
+
+### Added
+
+- **`easydeploy` menu** — added Check F (backup state) and two new menu
+  options: "Set up backups" and "Update backups", both gated on the CI
+  workflow already existing (same prerequisite as `ea-deploy-backup`
+  itself). Backups can now be set up or reconfigured at any time from the
+  main menu, not only automatically right after `ea-deploy-setup`.
+
+---
+
 ## [1.1.1] - 2026-07-31
 
 ### Migration FROM 1.1.0

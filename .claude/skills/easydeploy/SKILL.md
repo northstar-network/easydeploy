@@ -94,6 +94,15 @@ grep -s "KEYCLOAK_CLIENT_ID" .env 2>/dev/null
 - Output non-empty (variable exists and is set) → `ssoState = "configured"`
 - Output empty or file absent → `ssoState = "missing"`
 
+### Check F — Backups
+
+```bash
+grep -s "backup-setup@" .easydeploy 2>/dev/null
+```
+
+- Output non-empty → `backupState = "configured"`
+- Output empty or file absent → `backupState = "missing"`
+
 ---
 
 ## Step 2 — Build the menu
@@ -114,6 +123,8 @@ Each option corresponds to one skill to invoke. Include all applicable options
 | `dockerState = "ready"` AND `githubState = "configured"` AND `ciState = "exists"` | "Deploy to production" | `ea-deploy` |
 | `ssoState = "missing"` | "Set up Keycloak SSO" | `ea-keycloak-sso` |
 | `ssoState = "configured"` | "Update Keycloak SSO" | `ea-keycloak-sso` |
+| `ciState = "exists"` AND `backupState = "missing"` | "Set up backups" | `ea-deploy-backup` |
+| `ciState = "exists"` AND `backupState = "configured"` | "Update backups" | `ea-deploy-backup` |
 
 Always add a final "Exit" option.
 
