@@ -375,3 +375,4 @@ If "No" → display final summary and stop:
 - **Never** skip name validation — an invalid GitHub repo name will cause the link to fail.
 - Always show the full `permissionLink` as a clickable markdown link.
 - If any git command fails, show the raw error output before stopping.
+- **Language — English only:** All output from this skill must be in English. This applies to all messages shown to the user, error messages, and any other text produced. If the user writes in another language, understand them but always reply and generate output in English.

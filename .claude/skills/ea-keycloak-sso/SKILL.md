@@ -63,7 +63,7 @@ Based on `framework`, choose the recommended approach from the table below:
 | `nextjs` | NextAuth.js with Keycloak provider | `next-auth` |
 | `express` | keycloak-connect middleware | `keycloak-connect`, `express-session` |
 | `nestjs` | Passport + OpenID Connect | `@nestjs/passport`, `passport`, `passport-openidconnect` |
-| `react-spa` / `vue` / `angular` | Keycloak JS adapter (client-side) | `keycloak-js` |
+| `react-spa` / `vue` / `angular` | BFF auth proxy (Node.js, server-side) | `openid-client`, `express`, `express-session` |
 | `fastapi` | python-keycloak + python-jose | `python-keycloak`, `python-jose[cryptography]`, `httpx` |
 | `django` | mozilla-django-oidc | `mozilla-django-oidc` |
 | `flask` | Authlib OIDC | `authlib`, `requests` |
@@ -388,26 +388,128 @@ export class KeycloakStrategy extends PassportStrategy(Strategy, "openidconnect"
 
 #### React / Vue / Angular SPA (`react-spa`, `vue`, `angular`)
 
-Write `src/keycloak.ts` (or `src/keycloak.js`):
+SPAs cannot securely store a client secret in the browser. A Backend-for-Frontend (BFF)
+auth proxy is generated: a minimal Node.js/Express server that holds the secret server-side
+and exposes `/auth/login`, `/auth/callback`, `/auth/logout`, and `/auth/me` endpoints to
+the SPA via session cookies. The SPA never touches Keycloak directly.
 
-```typescript
-import Keycloak from "keycloak-js"
+**Write `auth-server/server.js`:**
 
-const keycloak = new Keycloak({
-  url: import.meta.env.VITE_KEYCLOAK_URL || process.env.REACT_APP_KEYCLOAK_URL,
-  realm: import.meta.env.VITE_KEYCLOAK_REALM || process.env.REACT_APP_KEYCLOAK_REALM || "nsn",
-  clientId: import.meta.env.VITE_KEYCLOAK_CLIENT_ID || process.env.REACT_APP_KEYCLOAK_CLIENT_ID || "",
+```javascript
+const express = require("express")
+const session = require("express-session")
+const { Issuer, generators } = require("openid-client")
+
+const app = express()
+
+app.use(
+  session({
+    secret: process.env.SESSION_SECRET,
+    resave: false,
+    saveUninitialized: false,
+    cookie: { httpOnly: true, sameSite: "lax" },
+  })
+)
+
+let oidcClient
+
+async function getClient() {
+  if (!oidcClient) {
+    const issuer = await Issuer.discover(
+      `${process.env.KEYCLOAK_URL}realms/${process.env.KEYCLOAK_REALM}`
+    )
+    oidcClient = new issuer.Client({
+      client_id: process.env.KEYCLOAK_CLIENT_ID,
+      client_secret: process.env.KEYCLOAK_CLIENT_SECRET,
+      redirect_uris: [`${process.env.APP_URL}/auth/callback`],
+      response_types: ["code"],
+    })
+  }
+  return oidcClient
+}
+
+app.get("/auth/login", async (req, res) => {
+  const client = await getClient()
+  const codeVerifier = generators.codeVerifier()
+  req.session.codeVerifier = codeVerifier
+  res.redirect(
+    client.authorizationUrl({
+      scope: "openid profile email",
+      code_challenge: generators.codeChallenge(codeVerifier),
+      code_challenge_method: "S256",
+    })
+  )
 })
 
-export default keycloak
+app.get("/auth/callback", async (req, res) => {
+  const client = await getClient()
+  const params = client.callbackParams(req)
+  const tokenSet = await client.callback(
+    `${process.env.APP_URL}/auth/callback`,
+    params,
+    { code_verifier: req.session.codeVerifier }
+  )
+  req.session.user = tokenSet.claims()
+  delete req.session.codeVerifier
+  res.redirect("/")
+})
+
+app.get("/auth/me", (req, res) => {
+  if (!req.session.user) return res.status(401).json({ error: "Not authenticated" })
+  res.json(req.session.user)
+})
+
+app.get("/auth/logout", async (req, res) => {
+  const client = await getClient()
+  const logoutUrl = client.endSessionUrl({ post_logout_redirect_uri: process.env.APP_URL })
+  req.session.destroy()
+  res.redirect(logoutUrl)
+})
+
+app.listen(3001, () => console.log("Auth server listening on port 3001"))
 ```
 
-Also add to `.env` the Vite/CRA prefixed variants:
+**Write `auth-server/package.json`:**
 
-- If Vite detected (`vite.config.*` present): add `VITE_KEYCLOAK_URL`, `VITE_KEYCLOAK_REALM`, `VITE_KEYCLOAK_CLIENT_ID` (no secret — public client)
-- If Create React App detected (`react-scripts` in `package.json`): add `REACT_APP_KEYCLOAK_URL`, `REACT_APP_KEYCLOAK_REALM`, `REACT_APP_KEYCLOAK_CLIENT_ID`
+```json
+{
+  "name": "auth-server",
+  "version": "1.0.0",
+  "main": "server.js",
+  "dependencies": {
+    "express": "^4.18.0",
+    "express-session": "^1.17.0",
+    "openid-client": "^5.0.0"
+  }
+}
+```
 
-Do **not** add `KEYCLOAK_CLIENT_SECRET` to `.env` for SPA projects — SPAs use public clients (no secret).
+**Add the `auth-server` service to `docker-compose.yml`:**
+
+```yaml
+  auth-server:
+    image: node:lts-alpine
+    working_dir: /app
+    command: sh -c "npm install && node server.js"
+    volumes:
+      - ./auth-server:/app
+    environment:
+      - KEYCLOAK_URL=${KEYCLOAK_URL}
+      - KEYCLOAK_REALM=${KEYCLOAK_REALM}
+      - KEYCLOAK_CLIENT_ID=${KEYCLOAK_CLIENT_ID}
+      - KEYCLOAK_CLIENT_SECRET=${KEYCLOAK_CLIENT_SECRET}
+      - APP_URL=${APP_URL:-http://localhost}
+      - SESSION_SECRET=${SESSION_SECRET}
+    networks:
+      - proxy
+    restart: unless-stopped
+```
+
+Also add `SESSION_SECRET=<generate a random 32-char hex string using: openssl rand -hex 32>` to `.env`.
+Run `openssl rand -hex 32` to generate `SESSION_SECRET`.
+
+The SPA calls `/auth/login` to start the login flow, `/auth/me` to get the current user,
+and `/auth/logout` to sign out. No Keycloak credentials are ever exposed to the browser.
 
 ---
 
@@ -655,7 +757,8 @@ Next steps:
 - **Always** read existing files before modifying them — never overwrite user code without reading it first.
 - **Always** present the full plan (Step 4) before making any changes.
 - **Always** show the `ssoPermissionLink` as a clickable markdown link.
-- For SPA projects: do **not** use a client secret — Keycloak public clients do not have one.
+- **Always** use a confidential client (clientId + clientSecret) — public clients are never allowed. For SPAs, use the generated BFF auth proxy to hold the secret server-side.
 - If package installation fails, do not stop — generate the files anyway and tell the user to install manually.
 - If any file write fails, show the raw error before continuing.
 - If invoked by another skill, resume that skill when this skill finishes — do not stop.
+- **Language — English only:** All output from this skill must be in English. This applies to all messages shown to the user, error messages, generated code comments, file content, and any other text produced. If the user writes in another language, understand them but always reply and generate output in English.

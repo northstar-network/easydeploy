@@ -78,6 +78,8 @@ Then append:
 ```
 Track the deployment at:
 https://github.com/northstar-network/<projectName>/actions
+
+Production URL: https://<productionHostname>
 ```
 
 To get `projectName`, run:
@@ -85,6 +87,15 @@ To get `projectName`, run:
 ```bash
 basename "$(git rev-parse --show-toplevel 2>/dev/null || pwd)"
 ```
+
+To get `productionHostname`, read `TRAEFIK_HOSTNAME` from `.env.prod`:
+
+```bash
+grep "^TRAEFIK_HOSTNAME=" .env.prod 2>/dev/null | cut -d= -f2
+```
+
+- If the value is found → use it as `productionHostname`.
+- If `.env.prod` is absent or the variable is not set → use `<projectName>.easydeploy.tech` as the fallback.
 
 ---
 
@@ -94,3 +105,4 @@ basename "$(git rev-parse --show-toplevel 2>/dev/null || pwd)"
 - **Never** push without first ensuring the CI workflow exists — always check in Step 1.
 - **Never** invoke `ea-github-commit` if `ea-deploy-setup` failed or was cancelled — stop instead.
 - The code review is handled inside `ea-github-commit` — do not invoke `ea-code-review` separately.
+- **Language — English only:** All output from this skill must be in English. This applies to all messages shown to the user, error messages, and any other text produced. If the user writes in another language, understand them but always reply and generate output in English.

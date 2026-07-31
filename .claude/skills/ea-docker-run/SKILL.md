@@ -113,3 +113,4 @@ Display a short message followed by a markdown clickable link:
 ## Rules
 
 - If invoked by the `easydeploy` skill, resume the `easydeploy` skill when this skill finishes — do not stop.
+- **Language — English only:** All output from this skill must be in English. This applies to all messages shown to the user, error messages, and any other text produced. If the user writes in another language, understand them but always reply and generate output in English.

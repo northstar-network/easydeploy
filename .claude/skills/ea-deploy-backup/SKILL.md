@@ -592,3 +592,4 @@ Display:
   user to the appropriate prerequisite skill — do not create them here.
 - Only dump/tar the databases and volumes actually detected in Step 3 — do
   not generate placeholder logic for engines that aren't present.
+- **Language — English only:** All output from this skill must be in English. This applies to all messages shown to the user, error messages, comments in generated scripts, file content, and any other text produced. If the user writes in another language, understand them but always reply and generate output in English.

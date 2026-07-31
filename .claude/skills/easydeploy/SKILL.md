@@ -162,3 +162,9 @@ AskUserQuestion:
 - **Never** skip an option because a prerequisite is not met — show all options
   the current state allows and let the user decide.
 - **Never** auto-invoke a skill without the user choosing it from the menu.
+- **Language — English only:** All output from this skill and every sub-skill
+  it invokes must be in English. This applies to: all messages shown to the
+  user, menu labels, error messages, comments in generated code, file content,
+  commit messages, CI configuration, and any other text produced. If the user
+  writes in another language, understand them but always reply and generate
+  output in English.

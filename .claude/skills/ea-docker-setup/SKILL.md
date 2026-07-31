@@ -606,3 +606,4 @@ AskUserQuestion:
 - **Never** modify an existing `docker-compose.yml` without showing a diff first.
 - **Never** modify the port or network configuration of nsnrouting — port 80 and the `proxy` network are fixed and must not be changed under any circumstance.
 - **Always** run scripts from `projectRoot` (cwd), not from the skill folder.
+- **Language — English only:** All output from this skill must be in English. This applies to all messages shown to the user, error messages, generated Dockerfile content, docker-compose content, README content, and any other text produced. If the user writes in another language, understand them but always reply and generate output in English.

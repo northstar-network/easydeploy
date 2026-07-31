@@ -362,3 +362,4 @@ AskUserQuestion:
 - **Never** leave conflict markers (`<<<<<<<`, `=======`, `>>>>>>>`) in any file after resolution.
 - If the working tree is clean (`git status` shows nothing to commit), say so and stop — do not create empty commits.
 - Always show the final remote URL in the success summary so the user can verify where the code was pushed.
+- **Language — English only:** All output from this skill must be in English. This applies to all messages shown to the user, conflict explanations, commit messages, error messages, and any other text produced. If the user writes in another language, understand them but always reply and generate output in English.

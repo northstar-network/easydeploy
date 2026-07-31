@@ -106,3 +106,4 @@ If `pendingMigrations` is empty and `relevantSections` exists, display:
 - Never delete local skills that are **not** present in the remote repo.
 - Never apply migrations without user confirmation.
 - If invoked by the `easydeploy` skill, return to it after completion.
+- **Language — English only:** All output from this skill must be in English. This applies to all messages shown to the user, changelog summaries, error messages, and any other text produced. If the user writes in another language, understand them but always reply and generate output in English.

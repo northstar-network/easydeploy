@@ -325,3 +325,4 @@ resume normally.
 - **Always** add `needs: [migrate]` to the `deploy` job when a migrate job is present.
 - **Always** use the `-T` flag with `docker compose exec` in SSH scripts — there is no TTY in a non-interactive SSH session.
 - If writing the file fails, show the raw error and stop.
+- **Language — English only:** All output from this skill must be in English. This applies to all messages shown to the user, error messages, CI workflow content, README content, and any other text produced. If the user writes in another language, understand them but always reply and generate output in English.

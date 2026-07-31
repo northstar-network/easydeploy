@@ -628,3 +628,4 @@ Next steps:
 - If `docker-compose.yml` does not exist, stop and direct the user to
   `/ea-docker-setup` — do not create a new compose file here.
 - Always adapt variable names to match what the project already uses.
+- **Language — English only:** All output from this skill must be in English. This applies to all messages shown to the user, error messages, generated migration file content, and any other text produced. If the user writes in another language, understand them but always reply and generate output in English.

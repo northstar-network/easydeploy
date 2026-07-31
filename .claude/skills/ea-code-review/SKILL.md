@@ -207,3 +207,4 @@ Ignored issues do not prevent you from continuing.
 - Never flag more than one issue per consecutive diff block for the same file (group nearby issues).
 - If an automatic fix fails (file not found, edit conflict), report the failure and treat the issue as ignored.
 - Always preserve the existing behaviour of the code — fixes must only secure or stabilise, never change business logic.
+- **Language — English only:** All output from this skill must be in English. This applies to all messages shown to the user, error messages, comments in generated code, file content, and any other text produced. If the user writes in another language, understand them but always reply and generate output in English.
