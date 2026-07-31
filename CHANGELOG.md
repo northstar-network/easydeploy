@@ -8,6 +8,34 @@ updating to that version.
 
 ---
 
+## [1.1.1] - 2026-07-31
+
+### Migration FROM 1.1.0
+
+Projects that already ran `ea-deploy-backup` before this version have a
+`backup/scripts/backup.sh` generated with the old, broken bucket-handling
+logic. Re-run `/ea-deploy-backup` and choose "Reconfigure" to regenerate it
+with the fixes below, then redeploy.
+
+### Fixed
+
+- **`ea-deploy-backup`** — `backup.sh` no longer relies on `aws s3api
+  head-bucket` to decide whether to create the S3 bucket: on several
+  S3-compatible providers (OVH, Scaleway, MinIO, …) `head-bucket` fails to
+  auto-resolve the bucket's region even when the bucket exists and is fully
+  usable, which made the script wrongly retry bucket creation on every run
+  and crash on `BucketAlreadyOwnedByYou`. Bucket creation is now attempted
+  unconditionally, treating "already exists / already owned by you" as
+  success.
+- **`ea-deploy-backup`** — `backup.sh` now writes a zero-byte marker object
+  at the project's prefix (`$PROJECT_NAME/`) before the first real upload.
+  Some S3-compatible providers (observed on OVH's
+  `s3.<region>.io.cloud.ovh.net` endpoints) return `NoSuchBucket` on the
+  first `PutObject` under a prefix that has never been written to, even
+  though the bucket itself exists.
+
+---
+
 ## [1.1.0] - 2026-07-31
 
 ### Migration FROM 1.0.0

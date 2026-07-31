@@ -248,7 +248,34 @@ Write a bash script that:
      fi
    }
    ```
-3. **If `dbServices` is non-empty** — for each entry, dump into `$STAGING/<serviceName>.<ext>` using the matching command:
+3. Ensures the bucket exists before the first upload — a fresh shared bucket
+   may not have been created yet, and `PutObject` fails with `NoSuchBucket`
+   rather than creating it implicitly. Do **not** gate this on `aws s3api
+   head-bucket`: on many S3-compatible providers (OVH, Scaleway, MinIO, …)
+   `head-bucket` tries to auto-resolve the bucket's region and fails even
+   when the bucket exists and is fully usable, which would make the script
+   wrongly retry creation on every run and die on `BucketAlreadyOwnedByYou`
+   once `set -e` is in effect. Instead, attempt creation unconditionally and
+   treat "already exists / already owned by you" as success:
+   ```bash
+   MB_OUTPUT=$(aws_cmd s3 mb "s3://$S3_BACKUP_BUCKET" 2>&1) || {
+     if ! echo "$MB_OUTPUT" | grep -q "BucketAlreadyOwnedByYou\|BucketAlreadyExists"; then
+       echo "$MB_OUTPUT" >&2
+       exit 1
+     fi
+   }
+   ```
+4. Ensures this project's prefix exists inside the shared bucket. Some
+   S3-compatible providers (e.g. OVH's `s3.<region>.io.cloud.ovh.net`
+   endpoints) return `NoSuchBucket` on the first `PutObject` under a prefix
+   that has never been written to, even though the bucket itself exists —
+   S3 prefixes aren't real directories and some gateways only recognize one
+   once *something* has been written under it. A harmless zero-byte marker
+   object fixes this and is a no-op on subsequent runs:
+   ```bash
+   aws_cmd s3api put-object --bucket "$S3_BACKUP_BUCKET" --key "$PROJECT_NAME/" >/dev/null
+   ```
+5. **If `dbServices` is non-empty** — for each entry, dump into `$STAGING/<serviceName>.<ext>` using the matching command:
 
    | `dbType` | Dump command |
    |---|---|
@@ -263,13 +290,13 @@ Write a bash script that:
    tar czf "/tmp/db-backup-$DATE.tar.gz" -C "$STAGING" .
    aws_cmd s3 cp "/tmp/db-backup-$DATE.tar.gz" "s3://$S3_BACKUP_BUCKET/$PROJECT_NAME/db-backup-$DATE.tar.gz"
    ```
-4. **If `assetVolumes` is non-empty** — tar the mounted source paths (mounted
+6. **If `assetVolumes` is non-empty** — tar the mounted source paths (mounted
    read-only at `/backup-src/<volumeName>` — see Step 5) and upload:
    ```bash
    tar czf "/tmp/assets-backup-$DATE.tar.gz" -C /backup-src .
    aws_cmd s3 cp "/tmp/assets-backup-$DATE.tar.gz" "s3://$S3_BACKUP_BUCKET/$PROJECT_NAME/assets-backup-$DATE.tar.gz"
    ```
-5. **Retention (7 days)** — after uploading, delete objects under this
+7. **Retention (7 days)** — after uploading, delete objects under this
    project's prefix older than `BACKUP_RETENTION_DAYS` (default 7):
    ```bash
    CUTOFF=$(date -d "-${BACKUP_RETENTION_DAYS:-7} days" +%F)
@@ -280,9 +307,9 @@ Write a bash script that:
      fi
    done
    ```
-6. Clean up the staging directory and local tarballs: `rm -rf "$STAGING" /tmp/db-backup-$DATE.tar.gz /tmp/assets-backup-$DATE.tar.gz`.
+8. Clean up the staging directory and local tarballs: `rm -rf "$STAGING" /tmp/db-backup-$DATE.tar.gz /tmp/assets-backup-$DATE.tar.gz`.
 
-Only include the blocks (3), (4) that apply based on what was detected in
+Only include the blocks (5), (6) that apply based on what was detected in
 Step 3 — do not write dead code for a database or asset backup that isn't
 configured.
 
