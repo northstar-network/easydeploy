@@ -8,6 +8,22 @@ updating to that version.
 
 ---
 
+## [1.1.0] - 2026-07-31
+
+### Added
+
+- **`ea-keycloak-sso`** — integrates Keycloak SSO authentication into a
+  project. Detects the framework (Next.js, Express, NestJS, React/Vue/Angular
+  SPA, FastAPI, Django, Flask, Symfony, Laravel, Rails, Spring Boot, Go),
+  proposes the right adapter, creates the Keycloak client via the NSN
+  permission manager at `github-permission-manager.n10.xyz/<project>/create-sso-client`,
+  then implements the full SSO flow with hardcoded values for the NSN
+  Keycloak instance (`https://keycloak.n10.xyz/`, realm `nsn`).
+- **`easydeploy` menu** — added Check E (Keycloak SSO state) and two new
+  menu options: "Set up Keycloak SSO" and "Update Keycloak SSO".
+
+---
+
 ## [1.0.0] - 2026-07-30
 
 Initial release of easydeploy.

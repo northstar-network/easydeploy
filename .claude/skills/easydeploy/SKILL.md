@@ -85,6 +85,15 @@ ls .github/workflows/deploy.yml 2>/dev/null
 - File found → `ciState = "exists"`
 - File absent → `ciState = "missing"`
 
+### Check E — Keycloak SSO
+
+```bash
+grep -s "KEYCLOAK_CLIENT_ID" .env 2>/dev/null
+```
+
+- Output non-empty (variable exists and is set) → `ssoState = "configured"`
+- Output empty or file absent → `ssoState = "missing"`
+
 ---
 
 ## Step 2 — Build the menu
@@ -103,6 +112,8 @@ Each option corresponds to one skill to invoke. Include all applicable options
 | `githubState = "configured"` | "Code review" | `ea-code-review` |
 | `dockerState = "ready"` AND `githubState = "configured"` AND `ciState = "missing"` | "Set up CI / deploy" | `ea-deploy-setup` |
 | `dockerState = "ready"` AND `githubState = "configured"` AND `ciState = "exists"` | "Deploy to production" | `ea-deploy` |
+| `ssoState = "missing"` | "Set up Keycloak SSO" | `ea-keycloak-sso` |
+| `ssoState = "configured"` | "Update Keycloak SSO" | `ea-keycloak-sso` |
 
 Always add a final "Exit" option.
 

@@ -14,6 +14,7 @@
 | [`ea-migrationdb-setup`](deploy-setup.md#database-and-migrations) | `/migrationdb-setup` | Detects DB usage, adds DB service to Compose, initialises migration system |
 | [`ea-deploy-backup`](backup-setup.md) | `/deploy-backup` | Sets up daily S3 backups (DB and/or assets) via a dedicated cron container |
 | [`ea-deploy`](deploy.md) | `/deploy` | Ensures CI exists, reviews code, pushes to trigger the production pipeline |
+| [`ea-keycloak-sso`](keycloak-sso.md) | `/ea-keycloak-sso` | Detects framework, creates Keycloak client, integrates SSO authentication |
 
 ---
 
