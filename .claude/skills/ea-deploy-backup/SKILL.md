@@ -9,7 +9,7 @@ description: >
   Trigger phrases: "backup", "sauvegarde", "backup setup", "setup backup",
   "deploy backup", "configurer les backups", "sauvegarder la base de données",
   "ea-deploy-backup".
-version: 1.0.0
+version: 1.2.0
 ---
 
 # ea-deploy-backup
@@ -17,7 +17,15 @@ version: 1.0.0
 Configures automated daily backups of the project's database and/or asset
 volumes to a shared S3-compatible bucket, running from a dedicated
 `<projectName>-backup-cron` container on a daily cron schedule (02:00
-Europe/Paris), with a 7-day retention.
+Europe/Paris), with a tiered rolling retention:
+
+- **Daily** backups (any day) — kept **7 days**.
+- The backup taken on the **15th of the month** — kept **14 days**.
+- The backup taken on the **last day of the month** — kept **1 year (365 days)**.
+
+The cron schedule itself stays a single daily job — one backup is produced
+per day. Retention is what differs: each object's own date decides which
+window applies to it (see 4.3.7).
 
 ---
 
@@ -296,17 +304,47 @@ Write a bash script that:
    tar czf "/tmp/assets-backup-$DATE.tar.gz" -C /backup-src .
    aws_cmd s3 cp "/tmp/assets-backup-$DATE.tar.gz" "s3://$S3_BACKUP_BUCKET/$PROJECT_NAME/assets-backup-$DATE.tar.gz"
    ```
-7. **Retention (7 days)** — after uploading, delete objects under this
-   project's prefix older than `BACKUP_RETENTION_DAYS` (default 7):
+7. **Tiered retention** — after uploading, delete objects under this
+   project's prefix that have aged out of *their own* retention window.
+   Every backup is daily, but the window that applies to a given object
+   depends on where its date falls:
+
+   - date is the **15th of its month** → `BACKUP_RETENTION_MID_MONTH_DAYS`
+     (default 14)
+   - date is the **last day of its month** → `BACKUP_RETENTION_YEARLY_DAYS`
+     (default 365)
+   - any other date → `BACKUP_RETENTION_DAILY_DAYS` (default 7)
+
+   These three checks are mutually exclusive (a month never has both its
+   15th and its last day be the same date), so each object gets exactly one
+   window. "Last day of month" for an arbitrary past date is computed by
+   checking whether the day after it rolls over to the 1st:
+
    ```bash
-   CUTOFF=$(date -d "-${BACKUP_RETENTION_DAYS:-7} days" +%F)
+   is_last_day_of_month() {
+     [ "$(date -d "$1 +1 day" +%d)" = "01" ]
+   }
+
    aws_cmd s3 ls "s3://$S3_BACKUP_BUCKET/$PROJECT_NAME/" | awk '{print $4}' | while read -r key; do
      fdate=$(echo "$key" | grep -oE '[0-9]{4}-[0-9]{2}-[0-9]{2}')
-     if [ -n "$fdate" ] && [ "$fdate" \< "$CUTOFF" ]; then
+     [ -n "$fdate" ] || continue
+
+     day=$(date -d "$fdate" +%d)
+     if [ "$day" = "15" ]; then
+       retention="${BACKUP_RETENTION_MID_MONTH_DAYS:-14}"
+     elif is_last_day_of_month "$fdate"; then
+       retention="${BACKUP_RETENTION_YEARLY_DAYS:-365}"
+     else
+       retention="${BACKUP_RETENTION_DAILY_DAYS:-7}"
+     fi
+
+     cutoff=$(date -d "-${retention} days" +%F)
+     if [ "$fdate" \< "$cutoff" ]; then
        aws_cmd s3 rm "s3://$S3_BACKUP_BUCKET/$PROJECT_NAME/$key"
      fi
    done
    ```
+
 8. Clean up the staging directory and local tarballs: `rm -rf "$STAGING" /tmp/db-backup-$DATE.tar.gz /tmp/assets-backup-$DATE.tar.gz`.
 
 Only include the blocks (5), (6) that apply based on what was detected in
@@ -362,9 +400,11 @@ Read `docker-compose.yml` and add:
       - S3_BACKUP_ACCESS_KEY=${S3_BACKUP_ACCESS_KEY}
       - S3_BACKUP_SECRET_KEY=${S3_BACKUP_SECRET_KEY}
       - S3_BACKUP_BUCKET=${S3_BACKUP_BUCKET}
-      - S3_BACKUP_ENDPOINT=${S3_BACKUP_ENDPOINT}
+      - S3_BACKUP_ENDPOINT=${S3_BACKUP_ENDPOINT:-https://s3.gra.io.cloud.ovh.net/}
       - PROJECT_NAME=<projectName>
-      - BACKUP_RETENTION_DAYS=7
+      - BACKUP_RETENTION_DAILY_DAYS=7
+      - BACKUP_RETENTION_MID_MONTH_DAYS=14
+      - BACKUP_RETENTION_YEARLY_DAYS=365
       # + the DB connection vars matching what was detected, e.g.:
       - DB_HOST=<serviceName>
       - DB_PORT=<port>
@@ -392,6 +432,14 @@ needed, there is no network connection to make.
 **Important:** `profiles: ["backup"]` means this container never starts on a
 plain local `docker compose up` — it only starts in production, when the
 deploy script explicitly passes `--profile backup` (Step 6).
+
+`S3_BACKUP_ENDPOINT` defaults to NSN's shared OVH bucket endpoint
+(`https://s3.gra.io.cloud.ovh.net/`) via Compose's `${VAR:-default}`
+substitution — this applies whether the `S3_BACKUP_ENDPOINT` secret is
+simply not set, or set to an empty string (Compose's `:-` treats both the
+same way, and so does the CI-generated `.env.backup` in Step 6.2). Projects
+using a different S3-compatible provider still override it by setting the
+`S3_BACKUP_ENDPOINT` GitHub secret to their own endpoint URL.
 
 If asset or sqlite restore needs to be possible later, mount those volumes
 read-write instead of read-only if the user is expected to restore via this
@@ -521,12 +569,15 @@ sections):
 ## Backups
 
 Automated daily backups run at 02:00 (Europe/Paris) from the
-`<projectName>-backup-cron` container, with a 7-day retention on S3.
+`<projectName>-backup-cron` container, with a tiered rolling retention on S3.
 
 - Backed up: <"database (<dbType list>)" and/or "assets (<volume list>)">
 - Location: `s3://<bucket>/<projectName>/db-backup-YYYY-MM-DD.tar.gz` and/or
   `s3://<bucket>/<projectName>/assets-backup-YYYY-MM-DD.tar.gz`
-- Retention: 7 days (older backups are deleted automatically after each run)
+- Retention (older backups are deleted automatically after each run):
+  - Daily backups: 7 days
+  - The 15th-of-the-month backup: 14 days
+  - The last-day-of-the-month backup: 1 year
 
 ### Required GitHub secrets
 
@@ -538,7 +589,7 @@ Configure these once at `Settings → Secrets and variables → Actions`
 | `S3_BACKUP_ACCESS_KEY` | Access key for the backup bucket |
 | `S3_BACKUP_SECRET_KEY` | Secret key for the backup bucket |
 | `S3_BACKUP_BUCKET` | Bucket name |
-| `S3_BACKUP_ENDPOINT` | S3-compatible endpoint URL (leave empty for AWS S3) |
+| `S3_BACKUP_ENDPOINT` | S3-compatible endpoint URL — optional, defaults to `https://s3.gra.io.cloud.ovh.net/` if unset |
 
 ### Restoring a backup
 
@@ -566,12 +617,13 @@ Display:
   Database(s)  : <dbType list, or "none">
   Asset volumes: <volume list, or "none">
   Schedule     : daily at 02:00 (Europe/Paris)
-  Retention    : 7 days
+  Retention    : 7 days daily / 14 days (15th of month) / 1 year (last day of month)
   Bucket path  : s3://<bucket>/<projectName>/
 
-⚠️  Before the next deploy, add these 4 secrets to the GitHub repo
+⚠️  Before the next deploy, add these secrets to the GitHub repo
     (Settings → Secrets and variables → Actions) if not already present:
-    S3_BACKUP_ACCESS_KEY, S3_BACKUP_SECRET_KEY, S3_BACKUP_BUCKET, S3_BACKUP_ENDPOINT
+    S3_BACKUP_ACCESS_KEY, S3_BACKUP_SECRET_KEY, S3_BACKUP_BUCKET
+    (S3_BACKUP_ENDPOINT is optional — defaults to https://s3.gra.io.cloud.ovh.net/)
 ```
 
 ---

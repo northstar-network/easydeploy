@@ -8,6 +8,34 @@ updating to that version.
 
 ---
 
+## [1.1.3] - 2026-08-04
+
+### Migration FROM 1.1.2
+
+Projects that already ran `ea-deploy-backup` have a flat 7-day retention and
+no default `S3_BACKUP_ENDPOINT`. Re-run `/ea-deploy-backup` and choose
+"Reconfigure" to regenerate `backup.sh` and the `backup-cron` service with
+the changes below, then redeploy.
+
+### Added
+
+- **`ea-deploy-backup`** — tiered rolling retention for S3 backups, replacing
+  the flat 7-day cutoff: daily backups are kept 7 days
+  (`BACKUP_RETENTION_DAILY_DAYS`), the backup taken on the 15th of the month
+  is kept 14 days (`BACKUP_RETENTION_MID_MONTH_DAYS`), and the backup taken
+  on the last day of the month is kept 1 year
+  (`BACKUP_RETENTION_YEARLY_DAYS`). The cron schedule itself is unchanged —
+  still one backup per day; only the purge window differs per object based
+  on its own date.
+- **`ea-deploy-backup`** — `S3_BACKUP_ENDPOINT` now defaults to NSN's shared
+  OVH GRA endpoint (`https://s3.gra.io.cloud.ovh.net/`) via Compose's
+  `${VAR:-default}` substitution, so projects no longer need to configure
+  this secret to use the shared bucket. Still overridable per-project by
+  setting the `S3_BACKUP_ENDPOINT` GitHub secret for a different
+  S3-compatible provider.
+
+---
+
 ## [1.1.2] - 2026-07-31
 
 ### Added
