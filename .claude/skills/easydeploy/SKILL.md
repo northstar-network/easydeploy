@@ -107,51 +107,102 @@ grep -s "backup-setup@" .easydeploy 2>/dev/null
 
 ## Step 2 — Build the menu
 
-Build the list of options dynamically based on the checks from Step 1.
-Each option corresponds to one skill to invoke. Include all applicable options
-— never hide one because another is not done yet.
+The menu is two levels deep so each `AskUserQuestion` stays within the
+4-option limit. Build three category groups from the checks in Step 1,
+then show the top-level category picker. When the user picks a category,
+show that category's specific actions.
 
-| Condition | Option label | Skill |
+### Category groups
+
+**Group A — "My project"**
+
+Include if at least one of these conditions is true:
+
+| Condition | Action label | Skill |
 |---|---|---|
-| `dockerState = "not-setup"` | "Set up project" | `ea-docker-setup` |
-| `dockerState = "outdated"` | "Update project setup (current: `<foundVersion>`)" | `ea-docker-setup` |
-| `dockerState = "ready"` and `dockerRunning = false` | "Start project" | `ea-docker-run` |
-| `dockerState = "ready"` and `dockerRunning = true` | "Restart project" | `ea-docker-run` |
-| `githubState = "no-git"` or `"not-configured"` | "Set up GitHub" | `ea-github-setup` |
-| `githubState = "configured"` | "Code review" | `ea-code-review` |
-| `dockerState = "ready"` AND `githubState = "configured"` AND `ciState = "missing"` | "Set up CI / deploy" | `ea-deploy-setup` |
+| `dockerState = "not-setup"` | "Set up the project" | `ea-docker-setup` |
+| `dockerState = "outdated"` | "Update the project setup (current: `<foundVersion>`)" | `ea-docker-setup` |
+| `dockerState = "ready"` AND `dockerRunning = false` | "Start the project" | `ea-docker-run` |
+| `dockerState = "ready"` AND `dockerRunning = true` | "Restart the project" | `ea-docker-run` |
+
+**Group B — "My code & GitHub"**
+
+Include if at least one of these conditions is true:
+
+| Condition | Action label | Skill |
+|---|---|---|
+| `githubState = "no-git"` or `"not-configured"` | "Connect to GitHub" | `ea-github-setup` |
+| `githubState = "configured"` | "Get the latest version" | `ea-github-sync` |
+| `githubState = "configured"` | "Review my code" | `ea-code-review` |
+| `githubState = "configured"` | "Submit changes for review" | `ea-github-mr` |
+
+**Group C — "Deploy & production"**
+
+Include if at least one of these conditions is true:
+
+| Condition | Action label | Skill |
+|---|---|---|
+| `dockerState = "ready"` AND `githubState = "configured"` AND `ciState = "missing"` | "Set up automatic deployment" | `ea-deploy-setup` |
 | `dockerState = "ready"` AND `githubState = "configured"` AND `ciState = "exists"` | "Deploy to production" | `ea-deploy` |
-| `ssoState = "missing"` | "Set up Keycloak SSO" | `ea-keycloak-sso` |
-| `ssoState = "configured"` | "Update Keycloak SSO" | `ea-keycloak-sso` |
 | `ciState = "exists"` AND `backupState = "missing"` | "Set up backups" | `ea-deploy-backup` |
 | `ciState = "exists"` AND `backupState = "configured"` | "Update backups" | `ea-deploy-backup` |
+| `ssoState = "missing"` | "Set up login (SSO)" | `ea-keycloak-sso` |
+| `ssoState = "configured"` | "Update login (SSO)" | `ea-keycloak-sso` |
 
-Always add a final "Exit" option.
+### Top-level category picker
 
-Present the menu:
+Build the options list with only the groups that have at least one action,
+plus "Exit". Present:
 
 ```
 AskUserQuestion:
-  question: "What would you like to do?"
   header: "easydeploy"
+  question: "What would you like to do?"
   options:
-    - label: <option 1 label>
-      description: <one-line description of what the skill will do>
-    - label: <option 2 label>
-      description: ...
-    ... (all applicable options)
+    - label: "My project"              ← only if Group A has actions
+      description: "Start, stop, or set up the project."
+    - label: "My code & GitHub"        ← only if Group B has actions
+      description: "Review code, connect to GitHub, or submit changes for review."
+    - label: "Deploy & production"     ← only if Group C has actions
+      description: "Deploy to production, set up backups, or configure login."
     - label: "Exit"
-      description: "Stop here"
+      description: "Stop here."
 ```
+
+### Category sub-menu
+
+When the user picks a category, collect its applicable actions (from the
+tables above) and present them. Always add "Back" as the last option:
+
+```
+AskUserQuestion:
+  header: "<Category name>"
+  question: "Choose an action:"
+  options:
+    - label: <action 1>
+      description: <one-line description>
+    - label: <action 2>              ← only if applicable
+      description: ...
+    - label: <action 3>              ← only if applicable
+      description: ...
+    - label: "Back"
+      description: "Return to the main menu."
+```
+
+**Shortcut — single action in a category:** If a category has exactly one
+applicable action, skip the sub-menu and invoke that skill directly (no
+extra click needed).
 
 ---
 
 ## Step 3 — Execute and loop
 
 - If the user picks **"Exit"** → stop.
+- If the user picks **"Back"** in a sub-menu → go to **Step 1**, re-evaluate
+  the project state, and show the top-level menu again.
 - Otherwise → invoke the corresponding skill. Wait for it to complete fully,
-  then go back to **Step 1** and re-evaluate the project state before showing
-  the menu again.
+  then go to **Step 1** and re-evaluate the project state before showing the
+  menu again.
 
 ---
 
