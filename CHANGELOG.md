@@ -8,6 +8,33 @@ updating to that version.
 
 ---
 
+## [1.2.0] - 2026-08-10
+
+### Added
+
+- **`ea-github-mr`** — new skill that guides non-technical users through
+  submitting changes for review via a GitHub Pull Request. Creates a working
+  copy (branch) from the selected change type, runs a code review, records
+  the changes, builds a plain-language PR description, pushes the branch, and
+  provides a ready-to-click GitHub compare URL. No `gh` CLI or personal access
+  token required — uses the existing SSH key set up by `ea-github-setup`.
+- **`ea-github-sync`** — new skill that switches to the main branch, stashes
+  any in-progress work, and pulls the latest changes from GitHub using
+  `git pull --rebase`. Resolves merge conflicts automatically using five
+  priority rules (empty-vs-content, additive, same-line modification, complex
+  fallback) and only asks the user for genuinely ambiguous deletion-vs-modification
+  conflicts. Loops across multiple rebase rounds correctly.
+- **`easydeploy` menu** — refactored from a flat list into a two-level
+  categorized structure (My project / My code & GitHub / Deploy & production)
+  to stay within the 4-option `AskUserQuestion` limit. Each category shows a
+  sub-menu of ≤ 3 actions + Back; a single-action category invokes its skill
+  directly without an extra click.
+- **`easydeploy` menu** — added "Submit changes for review" (`ea-github-mr`)
+  and "Get the latest version" (`ea-github-sync`) to the "My code & GitHub"
+  group, visible when `githubState = "configured"`.
+
+---
+
 ## [1.1.3] - 2026-08-04
 
 ### Migration FROM 1.1.2
