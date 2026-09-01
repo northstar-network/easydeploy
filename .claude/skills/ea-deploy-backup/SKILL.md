@@ -9,7 +9,7 @@ description: >
   Trigger phrases: "backup", "sauvegarde", "backup setup", "setup backup",
   "deploy backup", "configurer les backups", "sauvegarder la base de données",
   "ea-deploy-backup".
-version: 1.2.0
+version: 1.3.0
 ---
 
 # ea-deploy-backup
@@ -198,7 +198,9 @@ RUN apk add --no-cache bash aws-cli tzdata coreutils <db-packages>
 
 ENV TZ=Europe/Paris
 
-CMD ["crond", "-f", "-l", "2"]
+COPY "./crontab" "/etc/crontabs/root"
+
+CMD ["bash", "-c", "crontab /etc/crontabs/root && crond -f -l 2"]
 ```
 
 Replace `<db-packages>` with the space-separated list resolved from the table
@@ -210,20 +212,31 @@ BusyBox's `date` does not understand GNU relative-date syntax like
 `-d "-7 days"`, which the retention cleanup in `backup.sh` (4.3) depends on.
 Installing `coreutils` provides GNU `date` and takes priority on `$PATH`.
 
-**Do not `COPY` `crontab` or `scripts/` into the image.** They are bind-mounted
-from the host in Step 5 instead — same convention as the app service's own
-source code (see `ea-docker-setup`: source is always mounted as a volume,
-never baked into the image). This means a `git pull` on the server is enough
-to pick up script or schedule changes; only a real Dockerfile change (e.g. a
-new package) requires rebuilding the image. Baking scripts into the image
-with `COPY` would make them stale on every deploy unless the image is
-explicitly rebuilt, which normal deploys in this project never do.
+**`crontab` is `COPY`'d into the image; `scripts/` is not.** The crontab file
+*must* be baked in: a bind-mounted `/etc/crontabs/root` does not work
+reliably — `crond` needs the table installed through the `crontab` command
+(it validates it and writes it to its own spool), which is why the `CMD`
+runs `crontab /etc/crontabs/root && crond -f -l 2`. A file dropped straight
+onto the mount point is not picked up. Because the crontab is in the image,
+a schedule change requires an image rebuild — this happens automatically,
+since the deploy always passes `--build` (see 6.3).
+
+`scripts/` stays bind-mounted from the host in Step 5 — same convention as
+the app service's own source code (see `ea-docker-setup`: source is always
+mounted as a volume, never baked into the image). This means a `git pull` on
+the server is enough to pick up script changes. Baking the scripts in with
+`COPY` would make them stale between rebuilds; the crontab, which changes far
+less often and only lands correctly when installed via `crontab`, is the
+exception.
 
 ### 4.2 — `backup/crontab`
 
 ```
 0 2 * * * bash /scripts/backup.sh >> /var/log/backup.log 2>&1
 ```
+
+This file is `COPY`'d into the image by the Dockerfile (4.1) and installed at
+container start with `crontab /etc/crontabs/root`.
 
 Invoke via `bash /scripts/backup.sh`, not `/scripts/backup.sh` directly — the
 script arrives on the server through a bind mount and git does not reliably
@@ -415,7 +428,6 @@ Read `docker-compose.yml` and add:
       - <assetVolume>:/backup-src/<assetVolume>:ro      # one line per asset volume, repeat for each
       - <sqliteVolume>:/backup-src-db/<sqliteVolume>:ro # one line per sqlite dbServices entry, repeat for each
       - ./backup/scripts:/scripts:ro
-      - ./backup/crontab:/etc/crontabs/root:ro
     networks:
       - proxy
     restart: unless-stopped
