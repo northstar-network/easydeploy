@@ -8,6 +8,25 @@ updating to that version.
 
 ---
 
+## [1.3.0] - 2026-09-09
+
+### Changed
+
+- **`ea-deploy`** — now audits **every** workflow file under
+  `.github/workflows/` (not just `deploy.yml`, since projects often keep
+  their lint / test pipelines in separate files such as `ci.yml`,
+  `test.yml`, `lint.yml`) before pushing. Detects heavy checks that belong
+  in a pre-commit hook (lint, formatting, static analysis, unit tests
+  across JS/TS, PHP, Python, Ruby, Go, Rust and generic `make` targets)
+  and offers to move them out of the CI. When the user accepts, the
+  flagged steps are removed from every affected workflow file (whole
+  files are deleted when nothing but heavy checks remained), and a
+  tracked `./pre-commit` script (wired via `.git/hooks/pre-commit`) is
+  installed so the same commands run locally before every commit. The
+  `deploy` and `migrate` jobs are never touched. Bumped to `1.1.0`.
+
+---
+
 ## [1.2.0] - 2026-08-10
 
 ### Added
