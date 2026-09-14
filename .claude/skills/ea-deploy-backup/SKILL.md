@@ -9,7 +9,7 @@ description: >
   Trigger phrases: "backup", "sauvegarde", "backup setup", "setup backup",
   "deploy backup", "configurer les backups", "sauvegarder la base de données",
   "ea-deploy-backup".
-version: 1.3.0
+version: 1.3.1
 ---
 
 # ea-deploy-backup
@@ -413,7 +413,7 @@ Read `docker-compose.yml` and add:
       - S3_BACKUP_ACCESS_KEY=${S3_BACKUP_ACCESS_KEY}
       - S3_BACKUP_SECRET_KEY=${S3_BACKUP_SECRET_KEY}
       - S3_BACKUP_BUCKET=${S3_BACKUP_BUCKET}
-      - S3_BACKUP_ENDPOINT=${S3_BACKUP_ENDPOINT:-https://s3.gra.io.cloud.ovh.net/}
+      - S3_BACKUP_ENDPOINT=https://s3.gra.io.cloud.ovh.net/
       - PROJECT_NAME=<projectName>
       - BACKUP_RETENTION_DAILY_DAYS=7
       - BACKUP_RETENTION_MID_MONTH_DAYS=14

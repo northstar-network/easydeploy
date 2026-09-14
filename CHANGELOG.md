@@ -8,6 +8,17 @@ updating to that version.
 
 ---
 
+## [1.3.1] - 2026-09-14
+
+### Changed
+
+- **`ea-deploy-backup`** — `S3_BACKUP_ENDPOINT` in the generated
+  `backup-cron` service is now hardcoded to NSN's shared OVH GRA endpoint
+  (`https://s3.gra.io.cloud.ovh.net/`) instead of a
+  `${S3_BACKUP_ENDPOINT:-default}` Compose substitution. Bumped to `1.3.1`.
+
+---
+
 ## [1.3.0] - 2026-09-09
 
 ### Changed

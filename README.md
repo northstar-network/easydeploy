@@ -33,9 +33,13 @@ The skill inspects your project state and guides you through every step.
 | `ea-docker-run` | `/docker-run` | Starts containers for an already-configured project |
 | `ea-github-setup` | `/github-setup` | Creates or migrates the GitHub repo to `northstar-network` |
 | `ea-github-commit` | `/github-commit` | Pulls, resolves conflicts, reviews code, commits and pushes |
+| `ea-github-mr` | `/github-mr` | Creates a working branch, reviews the code, and opens a GitHub Pull Request |
+| `ea-github-sync` | `/github-sync` | Switches to main and pulls the latest changes, resolving conflicts automatically |
 | `ea-code-review` | `/code-review` | Scans staged changes for security issues and fatal errors |
 | `ea-deploy-setup` | `/deploy-setup` | Generates the GitHub Actions CI/CD workflow |
 | `ea-migrationdb-setup` | `/migrationdb-setup` | Detects DB usage, adds DB service to Compose, sets up migration system |
+| `ea-deploy-backup` | `/deploy-backup` | Sets up daily S3 backups (database and/or assets) via a dedicated cron container |
+| `ea-keycloak-sso` | `/ea-keycloak-sso` | Integrates Keycloak SSO authentication into the project |
 | `ea-deploy` | `/deploy` | Reviews code, pushes, and triggers the production pipeline |
 
 ## Workflow overview
@@ -48,10 +52,19 @@ Local setup
     └── ea-github-setup   — git init, create repo, push
           └── ea-github-commit
 
+Day-to-day code changes
+  ea-github-commit   — pull, resolve conflicts, commit, push
+        └── ea-code-review
+  ea-github-mr        — branch, review, open a Pull Request
+  ea-github-sync       — switch to main, pull latest, resolve conflicts
+
 Production deployment
   /deploy
     ├── ea-deploy-setup (if CI missing)
-    │     └── ea-migrationdb-setup
+    │     ├── ea-migrationdb-setup
+    │     └── ea-deploy-backup
     └── ea-github-commit
           └── ea-code-review
 ```
+
+See the [skills reference](docs/skills/overview.md) for the full list, including `ea-keycloak-sso`.
