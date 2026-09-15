@@ -9,7 +9,7 @@ description: >
   Trigger phrases: "backup", "sauvegarde", "backup setup", "setup backup",
   "deploy backup", "configurer les backups", "sauvegarder la base de données",
   "ea-deploy-backup".
-version: 1.3.1
+version: 1.4.0
 ---
 
 # ea-deploy-backup
@@ -102,6 +102,38 @@ Read `docker-compose.yml`. For every service whose `image:` matches one of
 
 - `serviceName` (the compose service key, e.g. `db`, `redis`)
 - `dbType`: `postgres | mysql | mariadb | mongodb | redis`
+
+#### Redis authentication
+
+For every entry with `dbType: redis`, determine whether the service actually
+requires a password. Do **not** assume the variable is called
+`REDIS_PASSWORD`, and do **not** treat a password variable used elsewhere in
+the project (e.g. a Laravel/Node app reading `REDIS_PASSWORD` from its own
+config, or an `.env.example` entry) as evidence that Redis itself is
+protected — that variable may not be wired to the Redis service at all.
+Only the `redis` service's own definition in `docker-compose.yml` counts:
+
+- `command:` includes `--requirepass <value>` (a literal string or a
+  `${VAR}` / `$VAR` reference), or
+- `environment:` sets a password-like key (`REDIS_PASSWORD`, `REDIS_PASS`,
+  `REDIS_AUTH`, or `ALLOW_EMPTY_PASSWORD=no` on Bitnami-style images).
+
+- **Found, and it's a `${VAR}`/`$VAR` reference** → resolve the exact
+  variable name used in *this* project (whatever it's actually called — do
+  not rename it) and store it on the entry as `authVar`.
+- **Found, but it's a literal value** (e.g. `--requirepass hunter2` with no
+  variable) → there is no env var to reuse. Store `authVar: null` but flag
+  this to the user in Step 10 — a hardcoded password in `docker-compose.yml`
+  can't be read by the backup container without either introducing a new
+  variable or duplicating the literal, and both need a human decision.
+- **Not found** → `authVar = null`. This Redis instance runs without
+  authentication. Do not add any password variable to the backup tooling for
+  it, even if a same-named variable exists elsewhere in the project — it is
+  not connected to this Redis service and including it would be misleading
+  dead configuration.
+
+Store `authVar` on the `dbServices` entry for this redis service; carry it
+through to Step 4.3, Step 4.4, and Step 5 below.
 
 #### SQLite (no dedicated service)
 
@@ -303,8 +335,16 @@ Write a bash script that:
    | postgres | `PGPASSWORD="$DB_PASSWORD" pg_dump -h "$DB_HOST" -p "${DB_PORT:-5432}" -U "$DB_USER" -d "$DB_NAME" -F c -f "$STAGING/<serviceName>.dump"` |
    | mysql / mariadb | `mysqldump -h "$DB_HOST" -P "${DB_PORT:-3306}" -u"$DB_USER" -p"$DB_PASSWORD" "$DB_NAME" > "$STAGING/<serviceName>.sql"` |
    | mongodb | `mongodump --uri="mongodb://$MONGO_USER:$MONGO_PASSWORD@$DB_HOST:${DB_PORT:-27017}/$MONGO_DB" --archive="$STAGING/<serviceName>.archive"` |
-   | redis | `redis-cli -h "$DB_HOST" -p "${DB_PORT:-6379}" ${REDIS_PASSWORD:+-a "$REDIS_PASSWORD"} --rdb "$STAGING/<serviceName>.rdb"` |
+   | redis | `redis-cli -h "$DB_HOST" -p "${DB_PORT:-6379}" <auth-flag> --rdb "$STAGING/<serviceName>.rdb"` |
    | sqlite | no network connection — the file is on the mounted volume (`/backup-src-db/<volumeName>`, see Step 5). Glob for db files and hot-copy each with `sqlite3`'s `.backup` command so a concurrent writer can't corrupt the snapshot: `for f in /backup-src-db/<volumeName>/*.db /backup-src-db/<volumeName>/*.sqlite /backup-src-db/<volumeName>/*.sqlite3; do [ -f "$f" ] || continue; sqlite3 "$f" ".backup '$STAGING/$(basename "$f")'"; done` |
+
+   `<auth-flag>` for redis is data-driven from the `authVar` resolved in
+   3.1's "Redis authentication" step — never hardcode `REDIS_PASSWORD`:
+   - `authVar` set → `${<authVar>:+-a "$<authVar>"}`, substituting the real
+     variable name resolved in 3.1.
+   - `authVar` is `null` → omit the flag entirely. Do not emit an empty
+     `${REDIS_PASSWORD:+...}` conditional referencing a variable that is
+     never set anywhere — there is nothing to guard against.
 
    Then archive and upload:
    ```bash
@@ -435,11 +475,25 @@ Read `docker-compose.yml` and add:
 
 Adapt the DB environment block to the actual variables already used by the
 project (from `ea-migrationdb-setup`): use `MONGO_USER` / `MONGO_PASSWORD` /
-`MONGO_DB` for mongodb, no password vars for a plain redis without auth. Set
-`DB_HOST` to the compose service name of the database (e.g. `db`, `redis`) so
-DNS resolution works over the `proxy` network. For a `sqlite` entry, omit the
-`DB_HOST`/`DB_USER`/`DB_PASSWORD` lines entirely — only the volume mount is
-needed, there is no network connection to make.
+`MONGO_DB` for mongodb. Set `DB_HOST` to the compose service name of the
+database (e.g. `db`, `redis`) so DNS resolution works over the `proxy`
+network. For a `sqlite` entry, omit the `DB_HOST`/`DB_USER`/`DB_PASSWORD`
+lines entirely — only the volume mount is needed, there is no network
+connection to make.
+
+**For redis specifically**, only `DB_HOST` and `DB_PORT` are always added.
+Whether a password line is added is entirely driven by the `authVar` resolved
+in 3.1's "Redis authentication" step:
+
+- `authVar` set → add `<authVar>=${<authVar>}`, reusing that **exact**
+  variable name and letting it flow from the same `.env` source the `redis`
+  service itself reads — never invent a differently-named variable, and
+  never rename it to `REDIS_PASSWORD` if the project calls it something else.
+- `authVar` is `null` → add no password line at all. Never add a hardcoded
+  `REDIS_PASSWORD=${REDIS_PASSWORD}` line "just in case" — if this Redis
+  service has no auth configured, the backup tooling must not reference a
+  password variable, even if one happens to exist elsewhere in the project
+  (e.g. read by the app framework but never wired to Redis itself).
 
 **Important:** `profiles: ["backup"]` means this container never starts on a
 plain local `docker compose up` — it only starts in production, when the
@@ -627,6 +681,7 @@ Display:
   Project      : <projectName>
   Container    : <projectName>-backup-cron
   Database(s)  : <dbType list, or "none">
+  Redis auth   : <"<authVar>" — only shown when a redis service was detected; "none (no requirepass found)" if authVar is null>
   Asset volumes: <volume list, or "none">
   Schedule     : daily at 02:00 (Europe/Paris)
   Retention    : 7 days daily / 14 days (15th of month) / 1 year (last day of month)
@@ -636,6 +691,18 @@ Display:
     (Settings → Secrets and variables → Actions) if not already present:
     S3_BACKUP_ACCESS_KEY, S3_BACKUP_SECRET_KEY, S3_BACKUP_BUCKET
     (S3_BACKUP_ENDPOINT is optional — defaults to https://s3.gra.io.cloud.ovh.net/)
+```
+
+If 3.1's "Redis authentication" step found a **literal** `--requirepass`
+value (no matching env var), also display:
+
+```
+⚠️  Redis service "<serviceName>" sets --requirepass to a hardcoded value in
+    docker-compose.yml with no environment variable behind it. The backup
+    container has no way to read a literal from the compose file, so its
+    Redis dump/restore will run unauthenticated and fail. Move the password
+    into an env var referenced by both the "<serviceName>" service and
+    backup-cron, then re-run this skill.
 ```
 
 ---
@@ -649,6 +716,13 @@ Display:
   never starts during local development.
 - **Never** guess or fabricate S3 credential values — they are not something
   this skill collects; they must already exist as GitHub secrets.
+- **Never** assume a Redis service requires authentication, or infer its
+  password variable name, from anything other than that service's own
+  `command:`/`environment:` in `docker-compose.yml` (see 3.1 "Redis
+  authentication"). A password variable used by the app framework is not
+  evidence the database itself is protected, and a database that has no
+  `authVar` must get no password wiring at all in the generated backup
+  tooling.
 - If invoked by `ea-deploy-setup`, resume `ea-deploy-setup` (and then
   `easydeploy` if that was the original caller) when this skill finishes —
   do not stop.

@@ -13,7 +13,7 @@ Also invoked automatically by `ea-deploy-setup` right after the CI workflow is c
 ## What it does
 
 1. **Checks prerequisites** — `docker-compose.yml` and `.github/workflows/deploy.yml` must already exist
-2. **Detects what to back up** — reads `docker-compose.yml` for database services (PostgreSQL, MySQL, MariaDB, MongoDB, Redis) and asset volumes mounted on the app service
+2. **Detects what to back up** — reads `docker-compose.yml` for database services (PostgreSQL, MySQL, MariaDB, MongoDB, Redis) and asset volumes mounted on the app service. For Redis specifically, it also checks whether the **service itself** is configured with a password (`--requirepass` or a password-like `environment:` key) — a password variable used only by the app's own Redis client config does not count. If Redis has no auth configured, no password variable is wired into the backup tooling at all; if one is configured, the exact variable name used by the project is reused as-is
 3. **Generates a `backup/` directory**:
    - `Dockerfile` — Alpine image with `aws-cli`, the matching DB client tools, and cron
    - `crontab` — `0 2 * * *` (daily at 02:00, `TZ=Europe/Paris`)

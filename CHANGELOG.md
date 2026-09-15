@@ -8,6 +8,33 @@ updating to that version.
 
 ---
 
+## [1.4.0] - 2026-09-15
+
+### Migration
+
+Projects with a Redis service that already ran `ea-deploy-backup` may have a
+stray `REDIS_PASSWORD` reference in `backup/scripts/backup.sh` and the
+`backup-cron` service's environment, wired to a variable that Redis itself
+never reads (see Fixed below). Re-run `/deploy-backup` and choose
+"Reconfigure" to regenerate them with the fix, then redeploy.
+
+### Fixed
+
+- **`ea-deploy-backup`** — Redis password detection no longer assumes the
+  variable is called `REDIS_PASSWORD`, and no longer treats a password
+  variable used elsewhere in the project (e.g. read by the app framework's
+  own Redis client config) as evidence that the Redis **service** itself
+  requires authentication. Detection now reads the `redis` service's own
+  `command:` / `environment:` in `docker-compose.yml` (`--requirepass`,
+  `REDIS_PASSWORD`, `REDIS_PASS`, `REDIS_AUTH`, or Bitnami's
+  `ALLOW_EMPTY_PASSWORD`) and resolves the exact variable name actually used
+  there. If Redis has no auth configured, no password variable is added to
+  `backup.sh` or the `backup-cron` service at all; if a hardcoded literal
+  password is found with no backing variable, the skill now warns the user
+  instead of silently doing nothing. Bumped to `1.4.0`.
+
+---
+
 ## [1.3.1] - 2026-09-14
 
 ### Changed
